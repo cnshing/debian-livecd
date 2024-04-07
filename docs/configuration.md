@@ -4,7 +4,7 @@ The following document describes all the high level configurations of the liveCD
 
 ## AppImages
 
-AppImages will replace packages not available in nixOS in the `$HOME/AppImages` directory.
+AppImages will replace packages not available through the Debian repositories in the `$HOME/AppImages` directory.
 
 Managing and integrating these AppImages into the desktop environment will be up to [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher) Lite, where it will be configured to look for `$HOME/AppImages`. The AppImageLauncher AppImage wil also be placed in the same directory.
 
@@ -56,7 +56,7 @@ Enable the User Themes GNOME extension and [gnome-tweaks](https://gitlab.gnome.o
 
 ### Thumbnailers
 
-Content based files should always have a preview thumbnail. NixOS should automatically provide thumbnail functionality built into GNOME, but some [issues](https://github.com/NixOS/nixpkgs/issues/200714) may or may not preside.
+Content based files should always have a preview thumbnail.
 
 ### Tweaks
 
