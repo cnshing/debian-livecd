@@ -9,11 +9,6 @@ on:
         description: 'The release version/tag'
         type: string
         required: true
-      formats:  
-        description: "A list of livecd formats to release as an artifact, using ['a', 'b', 'c'] notation"
-        type: string
-        required: true
-        default: "['install-iso', 'virtualbox', 'proxmox-lxc', 'proxmox', 'linode', 'gce', 'docker', 'do']"
       commitish:
         description: "Passthrough from action-gh-release: 'Commitish value that determines where the Git tag is created from. Can be any branch or commit SHA. Defaults to repository default branch.'"
         required: false
@@ -23,14 +18,8 @@ permissions:
 
 jobs:
   build_release:
-    strategy:
-      fail-fast: false
-      matrix:
-        formats: ${{ fromJSON(inputs.formats) }}
     uses: ./.github/workflows/build-livecd.yml
     with:
-      configuration: configuration.nix
-      format: ${{ matrix.formats }}
       commitish: ${{ inputs.commitish }}
   draft_release:
     needs: build_release

@@ -34,12 +34,5 @@ jobs:
     needs: pre_assessment_check
     if: needs.pre_assessment_check.outputs.skippable != 'true'
     # The type of runner that the job will run on
-    strategy:
-      fail-fast: false
-      matrix:
-        formats: [install-iso, virtualbox, proxmox-lxc, proxmox, linode, gce, docker, do]
     uses: ./.github/workflows/build-livecd.yml
-    with:
-      flake: ./#nixos-livecd
-      format: ${{ matrix.formats }}
 

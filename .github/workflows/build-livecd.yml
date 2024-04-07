@@ -1,22 +1,8 @@
-run-name: Build a ${{ inputs.format }} livecd with ${{ inputs.configuration || inputs.flake }}
+run-name: Build a debian livecd
 
 on:
   workflow_call:
     inputs:
-      flake:
-        description: 'The path of the flake uri describing the nix configuration like "./#nixos-livecd"'
-        type: string
-        required: false
-        default: './#nixos-livecd'
-      configuration:  
-        description: 'The path or filename of the nix configuration describing the image'
-        type: string
-        required: false
-      format:
-        description: 'The nixOS image format'
-        required: true
-        type: string
-        default: 'install-iso'
       commitish:
         description: "Manually override which commmit/branch the build should be based on. Passthrough from action-gh-release: 'Commitish value that determines where the Git tag is created from. Can be any branch or commit SHA. Defaults to repository default branch.'"
         type: string
@@ -26,54 +12,10 @@ on:
     # TODO: Once input duplication is not needed anymore, refactor the input duplicate code.
     # See https://github.com/orgs/community/discussions/39357
     inputs:
-      flake:
-        description: 'The path of the flake uri describing the nix configuration like "~/dotfiles#my-config"'
+      commitish:
+        description: "Manually override which commmit/branch the build should be based on. Passthrough from action-gh-release: 'Commitish value that determines where the Git tag is created from. Can be any branch or commit SHA. Defaults to repository default branch.'"
         type: string
         required: false
-        default: './#nixos-livecd'
-      configuration:  
-        description: 'The path or filename of the nix configuration describing the image'
-        type: string
-        required: false
-      format:
-        description: 'The nixOS image format'
-        required: true
-        type: choice
-        options:
-          - info
-          - warning
-          - debug
-          - amazon
-          - azure
-          - cloudstack
-          - do
-          - docker
-          - gce
-          - hyperv
-          - install-iso
-          - install-iso-hyperv
-          - iso
-          - kexec
-          - kexec-bundle
-          - kubevirt
-          - linode
-          - lxc
-          - lxc-metadata
-          - openstack
-          - proxmox
-          - proxmox-lxc
-          - qcow
-          - raw
-          - raw-efi
-          - sd-aarch64
-          - sd-aarch64-installer
-          - vagrant-virtualbox
-          - virtualbox
-          - vm
-          - vm-bootloader
-          - vm-nogui
-          - vmware
-        default: install-iso
 
 jobs:
   build:
@@ -83,38 +25,32 @@ jobs:
       # Frees available build disk space by removing unnecessary components
       # Hacky workaround can break at any time dependent on Github's current VM runner configuration
       - name: Maximize build space
-        uses: AdityaGarg8/remove-unwanted-software@master
-        if: contains(fromJson('["virtualbox", "proxmox", "linode", "gce", "do"]'), inputs.format)
+        uses: AdityaGarg8/remove-unwanted-software@v2
         with:
           remove-android: 'true'
           remove-dotnet: 'true'
           remove-codeql: 'true'
-          remove-docker-images: 'true'
 
       - uses: actions/checkout@v3
         with:
           ref: ${{ inputs.commitish }}
 
-      - name: Generate NixOS Image
-        uses: ./.github/actions/generate-nixos-image
-        with:
-          flake: ${{ inputs.flake }}
-          configuration: ${{ inputs.configuration }}
-          format: ${{ inputs.format  }}
+      - name: Generate Debian Image
+        uses: cnshing/build-linux-factory@v1 
         id: generate-image
 
       - name: Assign Artifact filename
+        env: 
+          image-path: $GITHUB_WORKSPACE/.build/lb/live-image-amd64.hybrid.iso 
         run: |
           # Get short git hash from
           # https://stackoverflow.com/questions/58886293/getting-current-branch-and-commit-hash-in-github-action
           git_hash=$(git rev-parse --short HEAD)
           filename=$(basename "${{ env.image-path }}")
-          artifact_name=${{ inputs.format }}-${git_hash}-${filename}
+          artifact_name=debian-${git_hash}-${filename}
           cd "$(dirname '${{ env.image-path }}')"
           #Move will require sudo permissions
           sudo mv -v "$filename" "$artifact_name"
-          #Preserve nix store directory with hard link
-          sudo ln -v "$artifact_name" "$filename"
           echo "asset-path=$(readlink -f "${artifact_name}")" >> $GITHUB_OUTPUT
           echo "artifact-name=${artifact_name}" >> $GITHUB_ENV
         id: build-files
