@@ -6,7 +6,7 @@ The following documentation describes any devops practices for this project.
 
 With the exception of non-impacting code changes like documentation, any new pull request should automatically trigger build a liveCD ISO image with the new changes. Unsuccessful builds are not merged into the main branch.
 
-You can see what liveCD formats we currently support by checking the automatic build liveCD [workflow](https://github.com/cnshing/nixos-livecd/blob/main/.github/workflows/automatic-build-livecd.yml). Any non-supported liveCD can optionally be retrieved as an artifact through a workflow [dispatch](https://github.com/cnshing/nixos-livecd/actions/workflows/build-livecd.yml).
+Currently, the automatic build liveCD [workflow](https://github.com/cnshing/nixos-livecd/blob/main/.github/workflows/automatic-build-livecd.yml) only produces ISO live images.
 
 ### Optimizations 
 
