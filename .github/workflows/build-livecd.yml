@@ -41,7 +41,7 @@ jobs:
 
       - name: Assign Artifact filename
         env: 
-          image-path: $GITHUB_WORKSPACE/.build/lb/live-image-amd64.hybrid.iso 
+          image-path: ${{ github.workspace }}/.build/lb/live-image-amd64.hybrid.iso 
         run: |
           # Get short git hash from
           # https://stackoverflow.com/questions/58886293/getting-current-branch-and-commit-hash-in-github-action
