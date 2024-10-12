@@ -31,7 +31,7 @@ jobs:
           remove-dotnet: 'true'
           remove-codeql: 'true'
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.commitish }}
 
@@ -55,7 +55,7 @@ jobs:
           echo "artifact-name=${artifact_name}" >> $GITHUB_ENV
         id: build-files
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ env.artifact-name }}
           path: ${{ steps.build-files.outputs.asset-path }}

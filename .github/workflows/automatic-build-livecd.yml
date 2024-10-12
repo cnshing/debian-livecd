@@ -20,7 +20,7 @@ jobs:
       skippable: ${{ steps.pre-criteria-assessment.outputs.skippable }}
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Run pre criteria assessment
         uses: ./.github/actions/pre-criteria-assessment
