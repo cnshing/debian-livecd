@@ -28,12 +28,12 @@ jobs:
     env:
       asset-path: ./assets
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.commitish }}
 
       - name: Retrieve the build files
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         id: build-files
         with:
           path: ${{ env.asset-path }}
