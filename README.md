@@ -11,4 +11,4 @@ This project aims to create LiveCD with the following:
 
 ## Getting Started
 
-Those that want to create their own version of the LiveCD can checkout the [`minimum-build`](https://github.com/cnshing/debian-livecd/releases/tag/minimum-build) tag, which contains everything you need to create a bare-bones system. You can then check out the [overlays](https://github.com/clayrisser/linux-factory?tab=readme-ov-file#overlays) documentation to customize the image as needed.
+Those that want to create their own version of the LiveCD can fork the repository and checkout the [`minimum-build`](https://github.com/cnshing/debian-livecd/releases/tag/minimum-build) tag, which contains everything you need to create a bare-bones system. The [overlays](https://github.com/clayrisser/linux-factory?tab=readme-ov-file#overlays) documentation is also available to further customize the image as needed.
