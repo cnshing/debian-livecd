@@ -33,5 +33,5 @@ please describe the tests that you ran to verify your changes with reproducible 
 - [ ] Test B
 
 **Test Configuration**:
-* NixOS version:
+* Debian version:
 * Testbed:

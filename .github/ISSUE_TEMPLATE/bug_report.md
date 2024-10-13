@@ -24,7 +24,7 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Configuration (please fill if applicable):**
-- NixOS version [e.g. 23.11]
+- Debian version [e.g. 11]
 - CPU [e.g. AMD Ryzen 7]
 - GPU(if applicable) [e.g. NVIDIA GTX 1080]
 
