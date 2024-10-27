@@ -1,0 +1,10 @@
+- network-manager-fortisslvpn
+- network-manager-iodine
+- network-manager-l2tp
+- network-manager-openconnect
+- network-manager-openvpn
+- network-manager-pptp
+- network-manager-ssh
+- network-manager-sstp
+- network-manager-strongswan
+- network-manager-vpnc
