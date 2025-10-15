@@ -2,3 +2,4 @@ distribution: bookworm
 overlays:
   Networking: {}
   Networking+VPN: {}
+  Desktop Environment+Shell: {}
