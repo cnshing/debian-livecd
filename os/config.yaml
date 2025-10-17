@@ -4,4 +4,4 @@ lb:
 overlays:
   Networking: {}
   Networking+VPN: {}
-  "Desktop Environment+Shell": {}
+  Desktop Environment+Shell: {}
