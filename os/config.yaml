@@ -1,4 +1,6 @@
-distribution: bookworm
+distribution: trixie
+lb:
+  aptRecommends: false
 overlays:
   Networking: {}
   Networking+VPN: {}
