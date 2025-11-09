@@ -1,6 +1,6 @@
 distribution: bookworm
 lb:
-  aptRecommends: false
+  aptRecommends: true
 overlays:
   Networking: {}
   Networking+VPN: {}
