@@ -1,6 +1,6 @@
 distribution: trixie
 lb:
-  aptRecommends: true
+  aptRecommends: false
   win32Loader: false # win32-loader not supported on trixie distributions 
 overlays:
   Networking: {}
