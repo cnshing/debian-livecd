@@ -68,7 +68,7 @@ Additionally, the "Window is ready" popup whenever any application opens should 
 
 ### Window Tiling
 
-Applications should be able to be tiled to the top, bottom, left, and right halves of the screen identically to Window snap tiles via [WinTile](https://extensions.gnome.org/extension/1723/wintile-windows-10-window-tiling-for-gnome/).
+Applications should be able to be tiled to the top, bottom, left, and right halves of the screen identically to Window snap tiles via [WinTile](https://extensions.gnome.org/extension/1723/wintile-windows-10-window-tiling-for-gnome/). Alternatively, if this package is not readibly available through Debian's repository, you may use [Tiling Assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/).
 
 ## File Manager
 
