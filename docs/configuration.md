@@ -34,7 +34,7 @@ Both [Bitwarden](https://bitwarden.com/) and [Proton Pass](https://proton.me/pas
 
 ## Display Manager
 
-[LighDM](https://github.com/canonical/lightdm) will be the display manager using the default GTK [theme](#theming).
+[LightDM](https://github.com/canonical/lightdm) will be the display manager using the default GTK [theme](#theming) and [Wayland](https://wayland.freedesktop.org/) protocol.
 
 ## Desktop Environment
 
