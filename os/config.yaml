@@ -9,4 +9,5 @@ overlays:
   Desktop Environment+Shell: {}
   Desktop Environment+Tweaks: {}
   Desktop Environment+Phone Sync: {}
+  Desktop Environment+Window Tiling: {}
   Terminal: {}
