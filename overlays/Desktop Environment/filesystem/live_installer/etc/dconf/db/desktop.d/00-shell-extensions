@@ -1,3 +1,3 @@
 # For dconf compatability all enabling/disabling extension settings must be under one single master key value
 [org/gnome/shell]
-enabled-extensions=['arcmenu@arcmenu.com', 'dash-to-panel@jderose9.github.com', 'ding@rastersoft.com', 'ubuntu-app-indicators@ubuntu.com', 'user-theme@gnome-shell-extensions.gcampax.github.com', 'noannoyance-fork@jirkavrba', 'tiling-assistant@leleat-on-github']
+enabled-extensions=['arcmenu@arcmenu.com', 'dash-to-panel@jderose9.github.com', 'ding@rastersoft.com', 'ubuntu-appindicators@ubuntu.com', 'user-theme@gnome-shell-extensions.gcampax.github.com', 'noannoyance-fork@vrba.dev', 'tiling-assistant@leleat-on-github', 'gsconnect@andyholmes.github.io']
