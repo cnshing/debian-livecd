@@ -5,6 +5,8 @@ lb:
 overlays:
   Networking: {}
   Networking+VPN: {}
+  Desktop Environment: {}
   Desktop Environment+Shell: {}
   Desktop Enviornment+Tweaks: {}
   Desktop Environment+Phone Sync: {}
+  Terminal: {}
