@@ -11,3 +11,4 @@ overlays:
   Desktop Environment+Phone Sync: {}
   Desktop Environment+Window Tiling: {}
   Terminal: {}
+  Display Manager: {}
