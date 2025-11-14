@@ -34,7 +34,7 @@ Both [Bitwarden](https://bitwarden.com/) and [Proton Pass](https://proton.me/pas
 
 ## Display Manager
 
-[LighDM](https://github.com/canonical/lightdm) will be the display manager using the default GTK [theme](#theming).
+[GDM3](https://gitlab.gnome.org/GNOME/gdm) will be the display manager using the default GTK [theme](#theming) and [Wayland](https://wayland.freedesktop.org/) protocol.
 
 ## Desktop Environment
 
@@ -68,7 +68,7 @@ Additionally, the "Window is ready" popup whenever any application opens should 
 
 ### Window Tiling
 
-Applications should be able to be tiled to the top, bottom, left, and right halves of the screen identically to Window snap tiles via [WinTile](https://extensions.gnome.org/extension/1723/wintile-windows-10-window-tiling-for-gnome/).
+Applications should be able to be tiled to the top, bottom, left, and right halves of the screen identically to Window snap tiles via [WinTile](https://extensions.gnome.org/extension/1723/wintile-windows-10-window-tiling-for-gnome/). Alternatively, if this package is not readily available through Debian's repository, you may use [Tiling Assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/).
 
 ## File Manager
 

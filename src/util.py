@@ -6,7 +6,7 @@ import re
 import logging
 import tarfile
 import zipfile
-
+import shlex
 
 def merge_dict(a, b, depth=float("inf")):
     if b == None:
@@ -38,10 +38,9 @@ async def merge_dirs(a_paths, b_path):
     existing_a_paths = list(filter(lambda path: os.path.exists(path), a_paths))
     shell(
         "rsync -r "
-        + " ".join(list(map(lambda p: p + "/", existing_a_paths)))
+        + " ".join(shlex.quote(p + "/") for p in existing_a_paths) # Ensures spaces with folders pass
         + " "
-        + b_path
-        + "/"
+        + shlex.quote(b_path + "/")
     )
 
 
