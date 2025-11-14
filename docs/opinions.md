@@ -6,7 +6,7 @@ The following document describes all my opinions or rationale on the liveCD [con
 
 In my opinion the only real choices are [LightDM](https://github.com/canonical/lightdm) because of their modern support and theme customizability. While [GDM](https://github.com/GNOME/gdm) also has these characteristics, I anecdotally never actually had to manually login with a DM for more than twice in a month, which makes a more resource draining GDM costly. Plus, theming tools like [Nody Greeter](https://github.com/JezerM/nody-greeter) allow LightDM to have a nice UI experience even without GNOME integrations.
 
-My conclusion for now, however, is because of composition protocol compatability for Wayland, I will have to stuck with GDM until LightDM is made available for it.
+My conclusion for now, however, is because of composition protocol compatibility for Wayland, I will have to stuck with GDM until LightDM is made available for it.
 
 ## Desktop Environment
 
