@@ -1,4 +1,4 @@
-- name: zorin-desktop-themes
+- name: zorin
   repo: "deb https://ppa.launchpadcontent.net/zorinos/stable/ubuntu/ noble main" # NOTE: Ubuntu repository version must correctly correspond to Debian equivalent
   binary: true
   live: true
