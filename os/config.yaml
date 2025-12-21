@@ -12,3 +12,4 @@ overlays:
   Desktop Environment+Window Tiling: {}
   Terminal: {}
   Display Manager: {}
+  Text Editor: {}
