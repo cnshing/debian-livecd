@@ -55,29 +55,3 @@ toolbar-icon-size='small-toolbar'
 toolbar-style='icons'
 toolbar-visible=false
 toolbar-visible-in-fullscreen='auto'
-
-[org/xfce/mousepad/state/application]
-enabled-plugins=@as []
-session=['1;;+']
-
-[org/xfce/mousepad/state/search]
-direction=uint32 1
-enable-regex=false
-highlight-all=false
-history-size=uint32 20
-incremental=false
-match-case=false
-match-whole-word=false
-replace-all=false
-replace-all-location=uint32 1
-replace-history=@as []
-search-history=[]
-wrap-around=true
-
-[org/xfce/mousepad/state/window]
-fullscreen=false
-height=uint32 634
-left=uint32 0
-maximized=false
-top=uint32 0
-width=uint32 1393
