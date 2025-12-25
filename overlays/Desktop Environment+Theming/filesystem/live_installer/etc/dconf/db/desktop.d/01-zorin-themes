@@ -1,2 +1,3 @@
 [org/gnome/desktop/interface]
 icon-theme='ZorinYellow-Dark'
+gtk-theme='ZorinYellow-Dark'
