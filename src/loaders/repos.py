@@ -4,7 +4,7 @@ import glob
 import os
 from util import mkdirs
 import yaml
-
+import logging
 
 class ReposLoader:
     name = "repos"
@@ -145,11 +145,15 @@ class ReposLoader:
             pin (os.PathLike): Any path to a apt pin `.pref`/`.pref.chroot` file.
         """
         # TODO: Create Pin object to customize build time and run-time pins. See https://live-team.pages.debian.net/live-manual/html/live-manual/customizing-package-installation.en.html
+        pin = os.path.abspath(pin)
+        dst = os.path.join(
+            self.deb.paths["lb"],
+            "config-overrides/archives"
+        )
+        logging.debug(f"REPO: Copying {pin} to {dst}")
         shutil.copy(
-            os.path.abspath(pin),
-            os.path.join(self.deb.paths["lb"],
-                         "config-overrides/archives"
-                        )
+            pin,
+            dst
         )
         
 class Repo:
