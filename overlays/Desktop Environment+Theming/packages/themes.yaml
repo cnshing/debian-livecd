@@ -1,5 +1,5 @@
 - zorin-desktop-themes
 - zorin-icon-themes
 - libreoffice-style-colibre
-- libreoffice-gtk3 # Similar to problem from https://unix.stackexchange.com/questions/787041/gtk-apps-uis-look-broken-in-debian except with GTK integration
+- libreoffice-gtk3 # From https://askubuntu.com/questions/1547299/libreoffice-ui-suddenly-feels-like-win95
 - libreoffice-gtk4
