@@ -1,2 +1,5 @@
 - zorin-desktop-themes
 - zorin-icon-themes
+- libreoffice-style-colibre
+- libreoffice-gtk3 # Similar to problem from https://unix.stackexchange.com/questions/787041/gtk-apps-uis-look-broken-in-debian except with GTK integration
+- libreoffice-gtk4
