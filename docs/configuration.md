@@ -111,7 +111,7 @@ The app should "just work", with no artificial barrier of access other than stan
 
 For basic text editing, [mousepad](https://github.com/xfce-mirror/mousepad) can do the job with these [preferences](settings.md#text-editor).
 
-For note taking and general document processing work, [LibreOffice](https://www.libreoffice.org/) should be setup with ZorinOS's [special](#theming) icons.
+For note taking and general document processing work, [LibreOffice](https://www.libreoffice.org/) should be setup.
 
 ## Video Player
 
