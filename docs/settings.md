@@ -145,79 +145,64 @@ Enabling scrollbar in the [Sakura](https://github.com/dabisu/sakura) terminal em
 
 ## Text Editor
 
-The configuration should match the following `gsettings list-recursively org.xfce.mousepad` preferences:
+The configuration should match the following dconf preferences:
 
 ```bash
-org.xfce.mousepad.preferences.file add-last-end-of-line false
-org.xfce.mousepad.preferences.file auto-reload false
-org.xfce.mousepad.preferences.file autosave-timer uint32 30
-org.xfce.mousepad.preferences.file default-encoding 'UTF-8'
-org.xfce.mousepad.preferences.file make-backup false
-org.xfce.mousepad.preferences.file monitor-changes true
-org.xfce.mousepad.preferences.file monitor-disabling-timer uint32 500
-org.xfce.mousepad.preferences.file session-restore 'after-a-crash'
-org.xfce.mousepad.preferences.view auto-indent false
-org.xfce.mousepad.preferences.view color-scheme 'oblivion'
-org.xfce.mousepad.preferences.view font-name 'Monospace 10'
-org.xfce.mousepad.preferences.view highlight-current-line true
-org.xfce.mousepad.preferences.view indent-on-tab true
-org.xfce.mousepad.preferences.view indent-width -1
-org.xfce.mousepad.preferences.view insert-spaces false
-org.xfce.mousepad.preferences.view match-braces false
-org.xfce.mousepad.preferences.view right-margin-position uint32 80
-org.xfce.mousepad.preferences.view show-line-endings true
-org.xfce.mousepad.preferences.view show-line-marks false
-org.xfce.mousepad.preferences.view show-line-numbers true
-org.xfce.mousepad.preferences.view show-right-margin false
-org.xfce.mousepad.preferences.view show-whitespace false
-org.xfce.mousepad.preferences.view smart-backspace false
-org.xfce.mousepad.preferences.view smart-home-end 'disabled'
-org.xfce.mousepad.preferences.view tab-width uint32 8
-org.xfce.mousepad.preferences.view use-default-monospace-font true
-org.xfce.mousepad.preferences.view word-wrap true
-org.xfce.mousepad.preferences.view.show-whitespace inside true
-org.xfce.mousepad.preferences.view.show-whitespace leading true
-org.xfce.mousepad.preferences.view.show-whitespace trailing true
-org.xfce.mousepad.preferences.window always-show-tabs false
-org.xfce.mousepad.preferences.window client-side-decorations false
-org.xfce.mousepad.preferences.window cycle-tabs false
-org.xfce.mousepad.preferences.window default-tab-sizes '2,3,4,8'
-org.xfce.mousepad.preferences.window expand-tabs true
-org.xfce.mousepad.preferences.window menubar-visible true
-org.xfce.mousepad.preferences.window menubar-visible-in-fullscreen 'auto'
-org.xfce.mousepad.preferences.window old-style-menu true
-org.xfce.mousepad.preferences.window opening-mode 'tab'
-org.xfce.mousepad.preferences.window path-in-title true
-org.xfce.mousepad.preferences.window recent-menu-items uint32 10
-org.xfce.mousepad.preferences.window remember-position false
-org.xfce.mousepad.preferences.window remember-size true
-org.xfce.mousepad.preferences.window remember-state true
-org.xfce.mousepad.preferences.window statusbar-visible false
-org.xfce.mousepad.preferences.window statusbar-visible-in-fullscreen 'auto'
-org.xfce.mousepad.preferences.window toolbar-icon-size 'small-toolbar'
-org.xfce.mousepad.preferences.window toolbar-style 'icons'
-org.xfce.mousepad.preferences.window toolbar-visible false
-org.xfce.mousepad.preferences.window toolbar-visible-in-fullscreen 'auto'
-org.xfce.mousepad.state.application enabled-plugins @as []
-org.xfce.mousepad.state.application session ['1;;+']
-org.xfce.mousepad.state.search direction uint32 1
-org.xfce.mousepad.state.search enable-regex false
-org.xfce.mousepad.state.search highlight-all false
-org.xfce.mousepad.state.search history-size uint32 20
-org.xfce.mousepad.state.search incremental false
-org.xfce.mousepad.state.search match-case false
-org.xfce.mousepad.state.search match-whole-word false
-org.xfce.mousepad.state.search replace-all false
-org.xfce.mousepad.state.search replace-all-location uint32 1
-org.xfce.mousepad.state.search replace-history @as []
-org.xfce.mousepad.state.search search-history []
-org.xfce.mousepad.state.search wrap-around true
-org.xfce.mousepad.state.window fullscreen false
-org.xfce.mousepad.state.window height uint32 634
-org.xfce.mousepad.state.window left uint32 0
-org.xfce.mousepad.state.window maximized false
-org.xfce.mousepad.state.window top uint32 0
-org.xfce.mousepad.state.window width uint32 1393
-```
+[org/xfce/mousepad/preferences/file]
+add-last-end-of-line=false
+auto-reload=false
+autosave-timer=uint32 30
+default-encoding='UTF-8'
+make-backup=false
+monitor-changes=true
+monitor-disabling-timer=uint32 500
+session-restore='after-a-crash'
 
-A simple solution to set these preferences is by running `gsettings set` for each preference line.
+[org/xfce/mousepad/preferences/view]
+auto-indent=false
+color-scheme='oblivion'
+font-name='Monospace 10'
+highlight-current-line=true
+indent-on-tab=true
+indent-width=-1
+insert-spaces=false
+match-braces=false
+right-margin-position=uint32 80
+show-line-endings=true
+show-line-marks=false
+show-line-numbers=true
+show-right-margin=false
+show-whitespace=false
+smart-backspace=false
+smart-home-end='disabled'
+tab-width=uint32 8
+use-default-monospace-font=true
+word-wrap=true
+
+[org/xfce/mousepad/preferences/view/show-whitespace]
+inside=true
+leading=true
+trailing=true
+
+[org/xfce/mousepad/preferences/window]
+always-show-tabs=false
+client-side-decorations=false
+cycle-tabs=false
+default-tab-sizes='2,3,4,8'
+expand-tabs=true
+menubar-visible=true
+menubar-visible-in-fullscreen='auto'
+old-style-menu=true
+opening-mode='tab'
+path-in-title=true
+recent-menu-items=uint32 10
+remember-position=false
+remember-size=true
+remember-state=true
+statusbar-visible=false
+statusbar-visible-in-fullscreen='auto'
+toolbar-icon-size='small-toolbar'
+toolbar-style='icons'
+toolbar-visible=false
+toolbar-visible-in-fullscreen='auto'
+```
