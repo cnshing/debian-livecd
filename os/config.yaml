@@ -1,6 +1,7 @@
 distribution: trixie
 lb:
   aptRecommends: true
+  aptOptions: "-y -o APT::Default-Release=trixie" # NOTE: Default release should be the same as distribution
   win32Loader: false # win32-loader not supported on trixie distributions 
 overlays:
   Networking: {}
@@ -10,5 +11,7 @@ overlays:
   Desktop Environment+Tweaks: {}
   Desktop Environment+Phone Sync: {}
   Desktop Environment+Window Tiling: {}
+  Desktop Environment+Theming: {}
   Terminal: {}
   Display Manager: {}
+  Text Editor: {}

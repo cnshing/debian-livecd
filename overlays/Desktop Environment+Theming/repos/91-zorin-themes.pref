@@ -1,0 +1,4 @@
+# Allow specific theme packages from Zorin
+Package: zorin-desktop-themes zorin-icon-themes
+Pin: release o=LP-PPA-zorinos-stable
+Pin-Priority: 100

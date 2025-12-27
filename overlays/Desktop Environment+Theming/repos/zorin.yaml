@@ -1,0 +1,36 @@
+- name: zorin
+  repo: "deb https://ppa.launchpadcontent.net/zorinos/stable/ubuntu noble main
+" # NOTE: Ubuntu repository version must correctly correspond to Debian equivalent # TODO: Add include from https://unix.stackexchange.com/a/801296 when it is supported
+  binary: true
+  live: true
+  installed: true
+  key: | # Obtain https://launchpadcontent.net/zorinos/stable/ubuntu/ 's fingerprint to query the pgp key from ubuntu's keyserver 
+    -----BEGIN PGP PUBLIC KEY BLOCK-----
+
+    xsFNBFfeyCMBEADEMOIi00+wAfIUUu9XKQOdZq2hHmWk04WD8b2oJDH8t0M40oRo
+    OvZrNUcCM/XzwCbuJvcV2+I0LRjWyhIs8tfKknCOe56lV0Hj3tyZzSEoBG2d8eO9
+    TZxePAytCMKRd78WSdcRFGl1OcbhCvxcLcPoPmuOOiA+2Twpo9B9CwuhbySg19hK
+    OjO31AtX4P4s94cxl3stKOutkItzmMnac3LqYlTvAyjoxgn5p3R8CwLglHHuhXBo
+    Ewhb0Crl+nRZCNL0xaV6bFU3CZ0ppn7Btn9VNyH2Fv2sDrERUgY0f8qAjSK2Cshv
+    QB/m9flB3xbFA19nCZRUqj1hBkHFNN8kTPug5cb0tmuVVoCK3So4X1N6ooVTuT3V
+    pkjs0gQmyUT9IPxbpwqt0MEwwFb8mHzQyChzyClAfQkdR/iLRX/ZEA/McWFmAhWr
+    eIbksrKmiRu6WngoEjBa1L+kQwKKzWb4OKV4fOb0SEAMsQJYnbdaTb0ykIbgLfto
+    3WXFriYHa0SsK4h2ePnyx2ZvI/aWJ38skKgdfsXq/fjImSi5rC+lvHEM1gG27emi
+    fZgSqhHsJgL04RVp7WM0MU48D2FKrjsElY24VOFMg3xXo8+mS71bakb9FMOStebQ
+    fY4kp1dIM4K1sQl1fSfMsPEguN2iA6BlFXjhFruXQCJBTvbaLQlOMKHAMwARAQAB
+    zRpMYXVuY2hwYWQgUFBBIGZvciBab3JpbiBPU8LBeAQTAQIAIgUCV97IIwIbAwYL
+    CQgHAwIGFQgCCQoLBBYCAwECHgECF4AACgkQMPz49k9xthyctBAAhMySX1g5wTXP
+    DkQydp/nA3xcWe7gtNgi2US8nRxz72lxqkPGjqErlHgOTU/jJcs15klbl685eMxi
+    YHWunNRXC0gcr50AphffjsH0dAiTAM9D88vQFrdofohkeJKpGget57K/dq+vjp6R
+    hQh4QiBa5AD4p62WrevB90TvU+mxpapxX43+chs/bYnjTpVsTj5vzdjhPMNuBYNU
+    9m4ZacQU6URvzRAfvU0/yQYLKyDTQMPo/qzQZtFs0KfdgPSMCK6t7gelO/KfN3da
+    IJV3iICLFU9sQ1gfRoyNxsS5zQu/iUDtzy7qwSXZ7ZaFcdTsg9v1lQ95GcqJ5lW/
+    BHsS4pHPreq0mqJCS1XeekqkuGGqAKopJj4G1Lw+cnQnzJDyDvK3lLhOza/Yyzc/
+    WLHhiG3O2fk/1+54Xc5gIgyYTmLg4f0UqeI30Qsjbe+mUSFfHTl9JzNzpqhbOBTK
+    NegYtPT78cKv15On4yP2dq9nxvgyPQTw54UYSvBLjiOrS9KrMfW8OK5488bs+deG
+    DkSd/Y02twECg6SqW220a9VcZo51Kah1kbUdL9NdqZ4PDR3e7AQPcFaEOKc1CLg1
+    omKPV+cJvstz7w0YZaubpCsg7PPFooR5gnOOGrU42Vdcj2IfscoNbGzCuoTNz+H4
+    SMYeyjkJoD7iSt813oljpoHT3q8FGfk=
+    =C2hO
+    -----END PGP PUBLIC KEY BLOCK-----
+

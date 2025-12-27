@@ -4,7 +4,7 @@ import glob
 import os
 from util import mkdirs
 import yaml
-
+import logging
 
 class ReposLoader:
     name = "repos"
@@ -16,8 +16,15 @@ class ReposLoader:
         repos = await self.get_repos()
         if not "repos" in self.deb.data:
             self.deb.data["repos"] = []
+        await mkdirs(
+            os.path.join(
+                self.deb.paths["lb"],
+                "config-overrides/archives",
+            )
+        )
         for r in repos:
             await self.load_repo(Repo(r))
+        await self.load_pins()
 
     async def get_repos(self):
         repos = []
@@ -33,12 +40,6 @@ class ReposLoader:
 
     async def load_repo(self, repo):
         self.deb.data["repos"].append(repo)
-        await mkdirs(
-            os.path.join(
-                self.deb.paths["lb"],
-                "config-overrides/archives",
-            )
-        )
         if repo.live or repo.installed:
             with open(
                 os.path.join(
@@ -120,7 +121,41 @@ class ReposLoader:
                     ),
                 )
 
+    async def load_pins(self):
+        pins = await self.get_pins()
+        for p in pins:
+            await self.load_pin(p)
 
+    async def get_pins(self):
+        """
+        Retrieves all the apt pinning files, located in the `repos` folder for any overlay.
+        """
+        return [pin 
+                for pin in glob.glob(
+                    os.path.join(
+                        self.deb.paths["os"], "repos/**/*.pref{,.chroot}"
+                    ),
+                    recursive=True,
+                    include_hidden=True,
+        )]
+
+    async def load_pin(self, pin: os.PathLike):
+        """
+        Args:
+            pin (os.PathLike): Any path to a apt pin `.pref`/`.pref.chroot` file.
+        """
+        # TODO: Create Pin object to customize build time and run-time pins. See https://live-team.pages.debian.net/live-manual/html/live-manual/customizing-package-installation.en.html
+        pin = os.path.abspath(pin)
+        dst = os.path.join(
+            self.deb.paths["lb"],
+            "config-overrides/archives"
+        )
+        logging.debug(f"REPO: Copying {pin} to {dst}")
+        shutil.copy(
+            pin,
+            dst
+        )
+        
 class Repo:
     def __init__(self, repo):
         self.live = repo["live"] if "live" in repo else True

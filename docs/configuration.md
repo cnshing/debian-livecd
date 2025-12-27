@@ -50,7 +50,7 @@ The desktop shell should traditionally include a [start menu](https://extensions
 
 ### Theming
 
-Enable the User Themes GNOME extension and [gnome-tweaks](https://gitlab.gnome.org/GNOME/gnome-tweaks). Then install the ZorinOS [desktop](https://github.com/ZorinOS/zorin-desktop-themes), [icon](https://github.com/ZorinOS/zorin-icon-themes), and special LibreOffice themes. Most of the liveCD look-and-feel should come from [ZorinOS](https://zorin.com/os/).
+Enable the User Themes GNOME extension and [gnome-tweaks](https://gitlab.gnome.org/GNOME/gnome-tweaks). Then install the ZorinOS [desktop](https://github.com/ZorinOS/zorin-desktop-themes), [icon](https://github.com/ZorinOS/zorin-icon-themes), and [colibre](https://packages.debian.org/stable/libreoffice-style-colibre) LibreOffice theme. Most of the liveCD look-and-feel should come from [ZorinOS](https://zorin.com/os/).
 
 [comment - Update the desktop background picture-uri once a path of known background images are found]: #
 
@@ -111,7 +111,7 @@ The app should "just work", with no artificial barrier of access other than stan
 
 For basic text editing, [mousepad](https://github.com/xfce-mirror/mousepad) can do the job with these [preferences](settings.md#text-editor).
 
-For note taking and general document processing work, [LibreOffice](https://www.libreoffice.org/) should be setup with ZorinOS's [special](#theming) icons.
+For note taking and general document processing work, [LibreOffice](https://www.libreoffice.org/) should be setup.
 
 ## Video Player
 
