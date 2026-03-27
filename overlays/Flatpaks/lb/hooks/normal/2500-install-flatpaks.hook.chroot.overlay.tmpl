@@ -1,0 +1,7 @@
+#!/bin/sh
+# Modified from https://github.com/clayrisser/linux-factory/blob/main/overlays/flatpak/lb/hooks/normal/2010-flatpak.hook.chroot.overlay.tmpl
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+{% for pkg in overlay.config.packages %}
+flatpak install -y {{ pkg }}
+{% endfor %}

@@ -15,3 +15,5 @@ overlays:
   Terminal: {}
   Display Manager: {}
   Text Editor: {}
+  Flatpaks:
+    packages: []
