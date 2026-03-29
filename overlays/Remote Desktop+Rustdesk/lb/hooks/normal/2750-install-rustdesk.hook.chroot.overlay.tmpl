@@ -1,0 +1,56 @@
+#!/bin/sh
+
+REPO="rustdesk/rustdesk"
+API_URL="https://api.github.com/repos/${REPO}/releases/latest"
+
+ARCH="{{ deb.arch }}"
+
+# Normalize in-place to RustDesk naming
+case "$ARCH" in
+    amd64)
+        ARCH="x86_64"
+        ;;
+    arm64)
+        ARCH="aarch64"
+        ;;
+    armhf)
+        ARCH="armv7"
+        ;;
+    *)
+        echo "Unsupported architecture: $ARCH"
+        exit 1
+        ;;
+esac
+
+echo "[RustDesk] ==> Using architecture: $ARCH"
+
+echo "[RustDesk] ==> Fetching latest release metadata..."
+JSON="$(curl -fsSL "$API_URL")"
+echo "$JSON"
+
+echo "[RustDesk] ==> Retrieving matching architecture .deb release..."
+
+DOWNLOAD_URL="$(echo "$JSON" | jq -r --arg ARCH "$ARCH" '
+  .assets[]
+  | select(.name | endswith($ARCH + ".deb"))
+  | .browser_download_url
+' | head -n1)"
+
+if [ -z "$DOWNLOAD_URL" ] || [ "$DOWNLOAD_URL" = "null" ]; then
+    echo "[RustDesk] ==> ERROR: No matching .deb found for architecture: $ARCH"
+    exit 1
+fi
+
+TMP_DEB="/tmp/rustdesk.deb"
+
+echo "[RustDesk] ==> Downloading package..."
+curl -L "$DOWNLOAD_URL" -o "$TMP_DEB"
+
+echo "[RustDesk] ==> Installing..."
+apt-get update
+apt-get install -y "$TMP_DEB"
+
+echo "[RustDesk] ==> Cleaning up..."
+rm -f "$TMP_DEB"
+
+echo "[RustDesk] ==> Installed successfully!"
