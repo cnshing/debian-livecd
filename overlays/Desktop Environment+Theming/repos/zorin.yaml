@@ -1,5 +1,5 @@
 - name: zorin
-  repo: "deb https://ppa.launchpadcontent.net/zorinos/stable/ubuntu noble main
+  repo: "deb [trusted=yes] https://ppa.launchpadcontent.net/zorinos/stable/ubuntu noble main
 " # NOTE: Ubuntu repository version must correctly correspond to Debian equivalent # TODO: Add include from https://unix.stackexchange.com/a/801296 when it is supported
   binary: true
   live: true
