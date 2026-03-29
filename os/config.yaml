@@ -17,3 +17,4 @@ overlays:
   Text Editor: {}
   Flatpaks:
     packages: []
+  Remote Desktop+Rustdesk: {}
