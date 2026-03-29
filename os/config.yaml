@@ -16,5 +16,4 @@ overlays:
   Display Manager: {}
   Text Editor: {}
   Flatpaks:
-    packages:
-      - com.parsecgaming.parsec
+    packages: []
