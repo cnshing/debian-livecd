@@ -1,3 +1,4 @@
 - flatpak
 - gnome-software-plugin-flatpak # Add Flatpak support for Gnome Software Store
 - xdg-desktop-portal
+- systemd-container # Required to install Flatpak in chroot
