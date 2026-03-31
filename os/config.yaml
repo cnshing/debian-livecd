@@ -18,4 +18,5 @@ overlays:
   Flatpaks:
     packages:
       - com.parsecgaming.parsec
+      - com.rustdesk.RustDesk
   Remote Desktop+Rustdesk: {}
