@@ -1,0 +1,4 @@
+#!/bin/sh
+{% for pkg in overlay.config.packages %}
+flatpak install -y --system --noninteractive {{ pkg }}
+{% endfor %}

@@ -1,4 +1,0 @@
-#!/bin/sh
-flatpak list --columns=ref --all | while read -r ref; do
-    flatpak info "$ref" >/dev/null 2>&1 || flatpak install -y "$ref"
-done
