@@ -3,4 +3,4 @@ set -e
 
 mount --bind chroot chroot
 echo "Mounts:"
-echo $(mount)
+mount
