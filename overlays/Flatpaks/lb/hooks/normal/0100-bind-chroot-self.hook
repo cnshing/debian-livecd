@@ -1,6 +1,0 @@
-#!/bin/bash
-set -e
-
-mount --bind chroot chroot
-echo "Mounts:"
-mount

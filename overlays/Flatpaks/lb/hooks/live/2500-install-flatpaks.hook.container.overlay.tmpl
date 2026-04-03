@@ -3,5 +3,5 @@
 flatpak --system remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
 {% for pkg in overlay.config.packages %}
-flatpak install -y --system --no-deploy --noninteractive {{ pkg }}
+flatpak install -y --system --noninteractive {{ pkg }}
 {% endfor %}
