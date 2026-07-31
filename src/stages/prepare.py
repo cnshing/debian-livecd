@@ -68,6 +68,8 @@ class PrepareStage:
         shutil.copytree(
             os.path.join(self.deb.paths["root"], "lb"), self.deb.paths["lb"]
         )
+        if cache:
+            shutil.move(stash_path, cache_path)
 
     async def initialize_os(self):
         if os.path.exists(self.deb.paths["os"]):
