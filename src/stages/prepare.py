@@ -54,6 +54,15 @@ class PrepareStage:
         os.chdir(self.deb.paths["build"])
 
     async def initialize_lb(self):
+        # Preserve the cache files if it is enabled
+        cache_path = os.path.join(self.deb.paths["lb"], "cache")
+        stash_path = os.path.join(self.deb.paths["build"], "lb-cache-stash")
+        cache = self.deb.config.get("lb", {}).get("cache", True)
+        if cache:
+            os.makedirs(cache_path, exist_ok=True)
+            if os.path.exists(stash_path):
+                shutil.rmtree(stash_path)
+            shutil.move(cache_path, stash_path)
         if os.path.exists(self.deb.paths["lb"]):
             shutil.rmtree(self.deb.paths["lb"])
         shutil.copytree(
