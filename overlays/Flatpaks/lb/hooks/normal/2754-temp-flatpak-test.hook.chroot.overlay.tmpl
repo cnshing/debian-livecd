@@ -1,185 +1,175 @@
 #!/bin/sh
 # AI generated code
-# TEMPORARY diagnostic hook. Delete once the bwrap question is settled.
+# TEMPORARY diagnostic hook. Delete once --no-deploy is validated.
 #
-# NOTE: this file is rendered as a Jinja2 template by src/util.py
-# (merge_dirs_templates). Do not introduce double-brace or brace-percent
-# sequences into it.
+# Thesis under test: `flatpak install --no-deploy` pulls extra-data payloads
+# into the local repo's detached commit metadata (xa.extra-data) WITHOUT ever
+# invoking bwrap, so it works in a plain chroot. A later --no-pull deploy can
+# then read that payload with no network.
 #
-# NOTE: lb_chroot_hooks aborts the entire build if a hook exits non-zero,
-# so this script never fails. Grep the build log for BWRAPTEST.
+# Deliberately a .hook.chroot, NOT .hook.container: if this passes in a bare
+# chroot, the thesis holds.
+#
+# NOTE: rendered as a Jinja2 template by src/util.py -- no double-brace or
+# brace-percent sequences.
+#
+# NOTE: lb_chroot_hooks aborts the build on non-zero exit. This never fails.
+# Grep the build log for NODEPLOY.
 
-M="BWRAPTEST"
+M="NODEPLOY"
 
-say() {
-    echo "${M}: $*"
-}
+# Set to 1 to also pull Parsec. Costs ~1GB (drags in org.freedesktop.Platform)
+# and several minutes. openh264 exercises the identical code path for ~2MB.
+TEST_PARSEC=0
 
-hdr() {
-    echo "${M}:"
-    echo "${M}: ===== $* ====="
-}
+say() { echo "${M}: $*"; }
+hdr() { echo "${M}:"; echo "${M}: ===== $* ====="; }
 
-# show FILE -- print a proc/sys value or note its absence
-show() {
-    if [ -r "$1" ]; then
-        say "  $1 = $(tr '\n' ' ' < "$1")"
-    elif [ -e "$1" ]; then
-        say "  $1 = <exists, unreadable>"
-    else
-        say "  $1 = <absent>"
-    fi
-}
-
-# try LABEL COMMAND -- run COMMAND, report rc, indent any output
 try() {
-    _label="$1"
-    _cmd="$2"
-    _out=$(eval "${_cmd}" 2>&1)
-    _rc=$?
-    if [ "${_rc}" -eq 0 ]; then
-        say "PASS      ${_label}"
-    else
-        say "FAIL rc=${_rc}  ${_label}"
-    fi
+    _label="$1"; _cmd="$2"
+    _out=$(eval "${_cmd}" 2>&1); _rc=$?
+    if [ "${_rc}" -eq 0 ]; then say "PASS      ${_label}"
+    else say "FAIL rc=${_rc}  ${_label}"; fi
     if [ -n "${_out}" ]; then
         echo "${_out}" | sed "s|^|${M}:        \| |"
     fi
     unset _label _cmd _out _rc
 }
 
-hdr "identity and chroot context"
-say "  uid=$(id -u) euid=$(id -u -r) user=$(id -un 2>/dev/null)"
-say "  uname: $(uname -a)"
-say "  debian_chroot: $(cat /etc/debian_chroot 2>/dev/null || echo '<absent>')"
-say "  HOME=${HOME} PATH=${PATH}"
-say "  XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-<unset>}"
-say "  XDG_DATA_HOME=${XDG_DATA_HOME:-<unset>}"
-say "  df -h /: $(df -h / | tail -n1)"
+# Scratch installation: cannot collide with 2500-install-flatpaks whichever
+# order live-build runs hooks/normal and hooks/live in.
+SCRATCH=/var/tmp/nodeploy-test
+export FLATPAK_SYSTEM_DIR="${SCRATCH}/system"
+export FLATPAK_SYSTEM_CACHE_DIR="${SCRATCH}/cache"
+export FLATPAK_DOWNLOAD_TMPDIR="${SCRATCH}/tmp"
+REPO="${FLATPAK_SYSTEM_DIR}/repo"
+mkdir -p "${FLATPAK_SYSTEM_DIR}" "${FLATPAK_SYSTEM_CACHE_DIR}" "${FLATPAK_DOWNLOAD_TMPDIR}"
 
-hdr "pseudo-filesystems"
-try "/proc is a live procfs" "ls /proc/self/ns >/dev/null"
-say "  /proc/self/ns contents:"
-ls -l /proc/self/ns 2>&1 | sed "s|^|${M}:        \| |"
-say "  mountinfo (proc/sys/dev/pts):"
-grep -E ' /(proc|sys|dev|dev/pts) ' /proc/self/mountinfo 2>/dev/null \
-    | sed "s|^|${M}:        \| |"
-say "  /dev entries: $(ls /dev 2>/dev/null | tr '\n' ' ')"
+hdr "setup"
+say "  flatpak: $(flatpak --version 2>&1)"
+say "  scratch: ${FLATPAK_SYSTEM_DIR}"
+say "  ostree CLI: $(command -v ostree || echo '<absent, will use find(1) instead>')"
+say "  unshare:    $(command -v unshare || echo '<absent, offline test will be skipped>')"
 
-hdr "user namespace policy"
-show /proc/sys/user/max_user_namespaces
-show /proc/sys/user/max_mnt_namespaces
-show /proc/sys/user/max_pid_namespaces
-show /proc/sys/kernel/unprivileged_userns_clone
-show /proc/sys/kernel/apparmor_restrict_unprivileged_userns
-show /proc/sys/kernel/apparmor_restrict_unprivileged_unconfined
-show /sys/module/user_namespace/parameters/enable
-say "  uid_map: $(tr '\n' ';' < /proc/self/uid_map 2>/dev/null)"
-say "  CapEff:  $(grep -E '^CapEff' /proc/self/status 2>/dev/null)"
-say "  Seccomp: $(grep -E '^Seccomp' /proc/self/status 2>/dev/null)"
-say "  NoNewPrivs: $(grep -E '^NoNewPrivs' /proc/self/status 2>/dev/null)"
+try "remote-add flathub" \
+    "flatpak --system remote-add --if-not-exists flathub \
+        https://dl.flathub.org/repo/flathub.flatpakrepo"
 
-hdr "bwrap binary"
-BWRAP="$(command -v bwrap 2>/dev/null)"
-if [ -z "${BWRAP}" ]; then
-    say "  bwrap NOT FOUND in PATH -- remaining tests will be skipped"
+ARCH="$(flatpak --default-arch)"
+
+# Resolve refs from the remote rather than hardcoding branches.
+OH264=$(flatpak --system remote-ls flathub --arch="${ARCH}" --columns=ref 2>/dev/null \
+        | grep 'org\.freedesktop\.Platform\.openh264' | tail -n 1)
+CTRL=$(flatpak --system remote-ls flathub --arch="${ARCH}" --columns=ref 2>/dev/null \
+        | grep 'org\.gtk\.Gtk3theme\.Adwaita-dark' | tail -n 1)
+
+say "  extra-data ref: ${OH264:-<unresolved>}"
+say "  control ref:    ${CTRL:-<unresolved>}"
+
+# commitmeta_size REF -- size in bytes of the detached metadata blob, or 0.
+# Detached metadata lives at repo/objects/<xx>/<rest>.commitmeta.
+commitmeta_size() {
+    _ref="$1"
+    _commit=$(cat "${REPO}/refs/remotes/flathub/${_ref}" 2>/dev/null)
+    [ -z "${_commit}" ] && { echo 0; return; }
+    _f="${REPO}/objects/$(echo "${_commit}" | cut -c1-2)/$(echo "${_commit}" | cut -c3-).commitmeta"
+    if [ -f "${_f}" ]; then wc -c < "${_f}" | tr -d ' '; else echo 0; fi
+    unset _ref _commit _f
+}
+
+# ---------------------------------------------------------------------------
+hdr "1. extra-data ref: pull with --no-deploy (must NOT touch bwrap)"
+if [ -z "${OH264}" ]; then
+    say "  ref unresolved -- skipping"
 else
-    say "  path: ${BWRAP}"
-    say "  mode: $(ls -l "${BWRAP}")"
-    if [ -u "${BWRAP}" ]; then
-        say "  setuid: YES  (flatpak will take the setuid path, no --disable-userns)"
+    try "install --no-deploy ${OH264}" \
+        "flatpak --system install --no-deploy -y --noninteractive flathub '${OH264}'"
+
+    say "  refs now in repo:"
+    (cd "${REPO}/refs/remotes" 2>/dev/null && find . -type f | sed 's|^\./||') \
+        | sed "s|^|${M}:        \| |"
+
+    SZ=$(commitmeta_size "${OH264}")
+    say "  commitmeta size for ${OH264}: ${SZ} bytes"
+    if [ "${SZ}" -gt 100000 ]; then
+        say "  ==> LARGE: consistent with an embedded xa.extra-data payload. GOOD."
+    elif [ "${SZ}" -gt 0 ]; then
+        say "  ==> small: signature-only commitmeta, payload probably NOT embedded."
     else
-        say "  setuid: no   (flatpak will pass --unshare-user --disable-userns)"
+        say "  ==> ABSENT: no detached metadata at all."
     fi
-    try "bwrap --version" "bwrap --version"
+
+    if command -v ostree >/dev/null 2>&1; then
+        COMMIT=$(cat "${REPO}/refs/remotes/flathub/${OH264}" 2>/dev/null)
+        try "xa.extra-data key present (byte count of printed value)" \
+            "ostree --repo='${REPO}' show --print-detached-metadata-key=xa.extra-data \
+                '${COMMIT}' | wc -c"
+    fi
+
+    say "  deployed anything? (expect NOTHING listed)"
+    flatpak --system list --columns=ref 2>&1 | sed "s|^|${M}:        \| |"
+    say "  deploy dirs under runtime/ (expect none):"
+    find "${FLATPAK_SYSTEM_DIR}/runtime" -maxdepth 1 -mindepth 1 2>/dev/null \
+        | sed "s|^|${M}:        \| |"
 fi
 
-if [ -n "${BWRAP}" ]; then
-    hdr "bwrap escalation ladder"
-
-    try "A: no namespaces" \
-        "bwrap --ro-bind / / -- /bin/true"
-
-    try "B: --unshare-user" \
-        "bwrap --unshare-user --ro-bind / / -- /bin/true"
-
-    try "C: --unshare-user --disable-userns  (what flatpak actually passes)" \
-        "bwrap --unshare-user --disable-userns --ro-bind / / -- /bin/true"
-
-    try "D: --unshare-pid" \
-        "bwrap --unshare-pid --ro-bind / / -- /bin/true"
-
-    try "E: --unshare-pid --proc /proc" \
-        "bwrap --unshare-pid --ro-bind / / --proc /proc -- /bin/true"
-
-    try "F: --dev /dev" \
-        "bwrap --ro-bind / / --dev /dev -- /bin/true"
-
-    # Approximation of the sandbox apply_extra_data() builds:
-    # unshare-user + disable-userns + unshare-pid, cap-drop ALL, NO /proc
-    # (flatpak sets FLATPAK_RUN_FLAG_NO_PROC there deliberately).
-    try "G: apply_extra-like composite" \
-        "bwrap --unshare-user --disable-userns --unshare-pid --cap-drop ALL \
-               --ro-bind / / \
-               --dir /tmp --dir /var/tmp --dir /run/host \
-               --perms 0700 --dir /run/user/0 \
-               --ro-bind-try /proc/self/ns/user /run/.userns \
-               -- /bin/true"
-fi
-
-hdr "flatpak"
-if ! command -v flatpak >/dev/null 2>&1; then
-    say "  flatpak NOT FOUND -- skipping end-to-end test"
+# ---------------------------------------------------------------------------
+hdr "2. control (non-extra-data): --no-deploy then offline --no-pull deploy"
+if [ -z "${CTRL}" ]; then
+    say "  ref unresolved -- skipping"
 else
-    try "flatpak --version" "flatpak --version"
-    try "flatpak --default-arch" "flatpak --default-arch"
-
-    # Sandboxed entirely inside /var/tmp so this cannot disturb the real
-    # /var/lib/flatpak that 2500-install-flatpaks manages.
-    TESTDIR=/var/tmp/bwraptest-flatpak
-    export FLATPAK_SYSTEM_DIR="${TESTDIR}/system"
-    export FLATPAK_SYSTEM_CACHE_DIR="${TESTDIR}/cache"
-    export FLATPAK_DOWNLOAD_TMPDIR="${TESTDIR}/tmp"
-    mkdir -p "${FLATPAK_SYSTEM_DIR}" "${FLATPAK_SYSTEM_CACHE_DIR}" \
-             "${FLATPAK_DOWNLOAD_TMPDIR}"
-    say "  scratch installation: ${FLATPAK_SYSTEM_DIR}"
-
-    try "remote-add flathub" \
-        "flatpak --system remote-add --if-not-exists flathub \
-            https://dl.flathub.org/repo/flathub.flatpakrepo"
-
-    try "remote-ls reachable (network + summary)" \
-        "flatpak --system remote-ls flathub --arch=\$(flatpak --default-arch) \
-            --columns=ref | head -n 3"
-
-    # openh264 is the canonical cheap extra-data canary: small payload, and
-    # its metadata sets no-runtime, so apply_extra_data() runs the bwrap
-    # sandbox without needing a full runtime deployed first. This is the
-    # exact code path that produced 'apply_extra script failed, exit 256'.
-    say "  resolving an openh264 branch..."
-    OH264_REF=$(flatpak --system remote-ls flathub \
-                    --arch="$(flatpak --default-arch)" --columns=ref 2>/dev/null \
-                | grep 'org\.freedesktop\.Platform\.openh264' | tail -n 1)
-    if [ -z "${OH264_REF}" ]; then
-        say "  could not resolve an openh264 ref -- skipping extra-data test"
+    try "install --no-deploy ${CTRL}" \
+        "flatpak --system install --no-deploy -y --noninteractive flathub '${CTRL}'"
+    if command -v unshare >/dev/null 2>&1; then
+        try "OFFLINE deploy via --no-pull (expect PASS)" \
+            "unshare -n flatpak --system install --no-pull -y --noninteractive \
+                flathub '${CTRL}'"
+        say "  deployed now:"
+        flatpak --system list --columns=ref 2>&1 | sed "s|^|${M}:        \| |"
     else
-        say "  using ref: ${OH264_REF}"
-        try "install extra-data ref (THE decisive test)" \
-            "flatpak --system install -y --noninteractive flathub '${OH264_REF}'"
-        try "confirm deployment" \
-            "flatpak --system list --columns=ref"
-        say "  extra-data lookaside that would have been consulted:"
-        ls -R "${HOME}/.local/share/flatpak/extra-data" 2>&1 \
-            | sed "s|^|${M}:        \| |"
+        say "  unshare absent -- skipping offline half"
     fi
 fi
 
+# ---------------------------------------------------------------------------
+hdr "3. THE DECISIVE TEST: offline --no-pull deploy of the extra-data ref"
+say "  Read the error text, not the exit code. In a chroot bwrap cannot run,"
+say "  so this is EXPECTED to fail. What matters is HOW:"
+say "    'apply_extra script failed'            -> extra data WAS found locally."
+say "                                              Offline path works. THESIS HOLDS."
+say "    'Extra data missing in detached metadata' -> payload not stored."
+say "                                              THESIS FAILS."
+say "    any network/HTTP error                 -> it tried to download."
+say "                                              THESIS FAILS."
+if [ -z "${OH264}" ]; then
+    say "  ref unresolved -- skipping"
+elif ! command -v unshare >/dev/null 2>&1; then
+    say "  unshare absent -- skipping"
+else
+    try "OFFLINE deploy via --no-pull ${OH264}" \
+        "unshare -n flatpak --system install --no-pull -y --noninteractive \
+            flathub '${OH264}'"
+fi
+
+# ---------------------------------------------------------------------------
+hdr "4. optional: Parsec (the app that actually failed)"
+if [ "${TEST_PARSEC}" != "1" ]; then
+    say "  skipped (set TEST_PARSEC=1 at the top of this hook to enable)"
+else
+    PARSEC="app/com.parsecgaming.parsec/${ARCH}/stable"
+    try "install --no-deploy ${PARSEC}" \
+        "flatpak --system install --no-deploy -y --noninteractive flathub '${PARSEC}'"
+    say "  commitmeta size for ${PARSEC}: $(commitmeta_size "${PARSEC}") bytes"
+    say "  repo size: $(du -sh "${REPO}" 2>/dev/null | cut -f1)"
+fi
+
+# ---------------------------------------------------------------------------
 hdr "cleanup"
-rm -rf /var/tmp/bwraptest-flatpak
+say "  scratch repo size before removal: $(du -sh "${SCRATCH}" 2>/dev/null | cut -f1)"
+rm -rf "${SCRATCH}"
 rm -rf /var/tmp/flatpak-cache-*
-rm -rf "${HOME}/.cache/flatpak"
-rm -rf "${HOME}/.local/share/flatpak"
-say "  removed scratch dirs (nothing should leak into the squashfs)"
+rm -rf "${HOME}/.cache/flatpak" "${HOME}/.local/share/flatpak"
+say "  removed (nothing should leak into the squashfs)"
 
 hdr "done"
 exit 0
