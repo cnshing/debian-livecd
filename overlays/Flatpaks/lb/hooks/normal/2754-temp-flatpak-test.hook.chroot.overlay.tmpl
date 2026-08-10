@@ -1,0 +1,185 @@
+#!/bin/sh
+# AI generated code
+# TEMPORARY diagnostic hook. Delete once the bwrap question is settled.
+#
+# NOTE: this file is rendered as a Jinja2 template by src/util.py
+# (merge_dirs_templates). Do not introduce double-brace or brace-percent
+# sequences into it.
+#
+# NOTE: lb_chroot_hooks aborts the entire build if a hook exits non-zero,
+# so this script never fails. Grep the build log for BWRAPTEST.
+
+M="BWRAPTEST"
+
+say() {
+    echo "${M}: $*"
+}
+
+hdr() {
+    echo "${M}:"
+    echo "${M}: ===== $* ====="
+}
+
+# show FILE -- print a proc/sys value or note its absence
+show() {
+    if [ -r "$1" ]; then
+        say "  $1 = $(tr '\n' ' ' < "$1")"
+    elif [ -e "$1" ]; then
+        say "  $1 = <exists, unreadable>"
+    else
+        say "  $1 = <absent>"
+    fi
+}
+
+# try LABEL COMMAND -- run COMMAND, report rc, indent any output
+try() {
+    _label="$1"
+    _cmd="$2"
+    _out=$(eval "${_cmd}" 2>&1)
+    _rc=$?
+    if [ "${_rc}" -eq 0 ]; then
+        say "PASS      ${_label}"
+    else
+        say "FAIL rc=${_rc}  ${_label}"
+    fi
+    if [ -n "${_out}" ]; then
+        echo "${_out}" | sed "s|^|${M}:        \| |"
+    fi
+    unset _label _cmd _out _rc
+}
+
+hdr "identity and chroot context"
+say "  uid=$(id -u) euid=$(id -u -r) user=$(id -un 2>/dev/null)"
+say "  uname: $(uname -a)"
+say "  debian_chroot: $(cat /etc/debian_chroot 2>/dev/null || echo '<absent>')"
+say "  HOME=${HOME} PATH=${PATH}"
+say "  XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-<unset>}"
+say "  XDG_DATA_HOME=${XDG_DATA_HOME:-<unset>}"
+say "  df -h /: $(df -h / | tail -n1)"
+
+hdr "pseudo-filesystems"
+try "/proc is a live procfs" "ls /proc/self/ns >/dev/null"
+say "  /proc/self/ns contents:"
+ls -l /proc/self/ns 2>&1 | sed "s|^|${M}:        \| |"
+say "  mountinfo (proc/sys/dev/pts):"
+grep -E ' /(proc|sys|dev|dev/pts) ' /proc/self/mountinfo 2>/dev/null \
+    | sed "s|^|${M}:        \| |"
+say "  /dev entries: $(ls /dev 2>/dev/null | tr '\n' ' ')"
+
+hdr "user namespace policy"
+show /proc/sys/user/max_user_namespaces
+show /proc/sys/user/max_mnt_namespaces
+show /proc/sys/user/max_pid_namespaces
+show /proc/sys/kernel/unprivileged_userns_clone
+show /proc/sys/kernel/apparmor_restrict_unprivileged_userns
+show /proc/sys/kernel/apparmor_restrict_unprivileged_unconfined
+show /sys/module/user_namespace/parameters/enable
+say "  uid_map: $(tr '\n' ';' < /proc/self/uid_map 2>/dev/null)"
+say "  CapEff:  $(grep -E '^CapEff' /proc/self/status 2>/dev/null)"
+say "  Seccomp: $(grep -E '^Seccomp' /proc/self/status 2>/dev/null)"
+say "  NoNewPrivs: $(grep -E '^NoNewPrivs' /proc/self/status 2>/dev/null)"
+
+hdr "bwrap binary"
+BWRAP="$(command -v bwrap 2>/dev/null)"
+if [ -z "${BWRAP}" ]; then
+    say "  bwrap NOT FOUND in PATH -- remaining tests will be skipped"
+else
+    say "  path: ${BWRAP}"
+    say "  mode: $(ls -l "${BWRAP}")"
+    if [ -u "${BWRAP}" ]; then
+        say "  setuid: YES  (flatpak will take the setuid path, no --disable-userns)"
+    else
+        say "  setuid: no   (flatpak will pass --unshare-user --disable-userns)"
+    fi
+    try "bwrap --version" "bwrap --version"
+fi
+
+if [ -n "${BWRAP}" ]; then
+    hdr "bwrap escalation ladder"
+
+    try "A: no namespaces" \
+        "bwrap --ro-bind / / -- /bin/true"
+
+    try "B: --unshare-user" \
+        "bwrap --unshare-user --ro-bind / / -- /bin/true"
+
+    try "C: --unshare-user --disable-userns  (what flatpak actually passes)" \
+        "bwrap --unshare-user --disable-userns --ro-bind / / -- /bin/true"
+
+    try "D: --unshare-pid" \
+        "bwrap --unshare-pid --ro-bind / / -- /bin/true"
+
+    try "E: --unshare-pid --proc /proc" \
+        "bwrap --unshare-pid --ro-bind / / --proc /proc -- /bin/true"
+
+    try "F: --dev /dev" \
+        "bwrap --ro-bind / / --dev /dev -- /bin/true"
+
+    # Approximation of the sandbox apply_extra_data() builds:
+    # unshare-user + disable-userns + unshare-pid, cap-drop ALL, NO /proc
+    # (flatpak sets FLATPAK_RUN_FLAG_NO_PROC there deliberately).
+    try "G: apply_extra-like composite" \
+        "bwrap --unshare-user --disable-userns --unshare-pid --cap-drop ALL \
+               --ro-bind / / \
+               --dir /tmp --dir /var/tmp --dir /run/host \
+               --perms 0700 --dir /run/user/0 \
+               --ro-bind-try /proc/self/ns/user /run/.userns \
+               -- /bin/true"
+fi
+
+hdr "flatpak"
+if ! command -v flatpak >/dev/null 2>&1; then
+    say "  flatpak NOT FOUND -- skipping end-to-end test"
+else
+    try "flatpak --version" "flatpak --version"
+    try "flatpak --default-arch" "flatpak --default-arch"
+
+    # Sandboxed entirely inside /var/tmp so this cannot disturb the real
+    # /var/lib/flatpak that 2500-install-flatpaks manages.
+    TESTDIR=/var/tmp/bwraptest-flatpak
+    export FLATPAK_SYSTEM_DIR="${TESTDIR}/system"
+    export FLATPAK_SYSTEM_CACHE_DIR="${TESTDIR}/cache"
+    export FLATPAK_DOWNLOAD_TMPDIR="${TESTDIR}/tmp"
+    mkdir -p "${FLATPAK_SYSTEM_DIR}" "${FLATPAK_SYSTEM_CACHE_DIR}" \
+             "${FLATPAK_DOWNLOAD_TMPDIR}"
+    say "  scratch installation: ${FLATPAK_SYSTEM_DIR}"
+
+    try "remote-add flathub" \
+        "flatpak --system remote-add --if-not-exists flathub \
+            https://dl.flathub.org/repo/flathub.flatpakrepo"
+
+    try "remote-ls reachable (network + summary)" \
+        "flatpak --system remote-ls flathub --arch=\$(flatpak --default-arch) \
+            --columns=ref | head -n 3"
+
+    # openh264 is the canonical cheap extra-data canary: small payload, and
+    # its metadata sets no-runtime, so apply_extra_data() runs the bwrap
+    # sandbox without needing a full runtime deployed first. This is the
+    # exact code path that produced 'apply_extra script failed, exit 256'.
+    say "  resolving an openh264 branch..."
+    OH264_REF=$(flatpak --system remote-ls flathub \
+                    --arch="$(flatpak --default-arch)" --columns=ref 2>/dev/null \
+                | grep 'org\.freedesktop\.Platform\.openh264' | tail -n 1)
+    if [ -z "${OH264_REF}" ]; then
+        say "  could not resolve an openh264 ref -- skipping extra-data test"
+    else
+        say "  using ref: ${OH264_REF}"
+        try "install extra-data ref (THE decisive test)" \
+            "flatpak --system install -y --noninteractive flathub '${OH264_REF}'"
+        try "confirm deployment" \
+            "flatpak --system list --columns=ref"
+        say "  extra-data lookaside that would have been consulted:"
+        ls -R "${HOME}/.local/share/flatpak/extra-data" 2>&1 \
+            | sed "s|^|${M}:        \| |"
+    fi
+fi
+
+hdr "cleanup"
+rm -rf /var/tmp/bwraptest-flatpak
+rm -rf /var/tmp/flatpak-cache-*
+rm -rf "${HOME}/.cache/flatpak"
+rm -rf "${HOME}/.local/share/flatpak"
+say "  removed scratch dirs (nothing should leak into the squashfs)"
+
+hdr "done"
+exit 0
