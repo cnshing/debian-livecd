@@ -27,10 +27,6 @@ trap 'rm -rf /var/tmp/flatpak-cache-* /root/.cache/flatpak /root/.local/share/fl
 flatpak --system remote-add --if-not-exists flathub \
     https://dl.flathub.org/repo/flathub.flatpakrepo
 
-# Must precede the pull: this decides which .Locale subpaths are fetched, not
-# just which are deployed. Unrestricted, org.freedesktop.Platform.Locale is ~824M.
-flatpak --system config --set languages "{{ overlay.config.languages | default('en') }}"
-
 for id in ${PKGS}; do
     flatpak --system install --no-deploy -y --noninteractive flathub "${id}"
 done
@@ -38,16 +34,9 @@ done
 # Also creates appstream/ and appstream2/ refs, and deploys them itself.
 flatpak --system update --appstream -y
 
-# Deploy by package id first. Extensions restricted by the languages config are
-# pulled as partial subpath installs, and only related-ref resolution knows which
-# subpaths exist locally -- naming such a ref directly requests a full checkout
-# and fails on the missing objects.
-flatpak --system install --no-pull -y --noninteractive flathub ${PKGS}
-
-# Classify the pulled closure by commitmeta size, and deploy anything the step
-# above left behind (GL.default, codecs-extra). Only app/ and runtime/ are
+# Classify the pulled closure by commitmeta size. Only app/ and runtime/ are
 # installable refs; appstream2/x86_64 would fail id validation.
-PENDING=""
+PLAIN=""
 DEFERRED=""
 cd /var/lib/flatpak/repo/refs/remotes/flathub
 for ref in $(find app runtime -type f 2>/dev/null | sort); do
@@ -55,14 +44,14 @@ for ref in $(find app runtime -type f 2>/dev/null | sort); do
     meta="/var/lib/flatpak/repo/objects/$(echo "${commit}" | cut -c1-2)/$(echo "${commit}" | cut -c3-).commitmeta"
     if [ "$(wc -c < "${meta}")" -gt 100000 ]; then
         DEFERRED="${DEFERRED} ${ref}"
-    elif [ ! -e "/var/lib/flatpak/${ref}/active" ]; then
-        PENDING="${PENDING} ${ref}"
+    else
+        PLAIN="${PLAIN} ${ref}"
     fi
 done
 cd /
 
-[ -z "${PENDING}" ] || \
-    flatpak --system install --no-pull -y --noninteractive flathub ${PENDING}
+# One invocation so the transaction orders runtimes before their extensions.
+flatpak --system install --no-pull -y --noninteractive flathub ${PLAIN}
 
 mkdir -p "$(dirname "${DEFER_LIST}")"
 printf '%s\n' ${DEFERRED} > "${DEFER_LIST}"
