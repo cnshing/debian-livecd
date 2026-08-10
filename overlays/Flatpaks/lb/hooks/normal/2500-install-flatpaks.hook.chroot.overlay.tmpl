@@ -37,11 +37,12 @@ done
 
 flatpak --system update --appstream -y
 
-# Classify the pulled closure by commitmeta size.
+# Classify the pulled closure by commitmeta size. Only app/ and runtime/ are
+# installable refs; appstream2/x86_64 would fail id validation.
 PLAIN=""
 DEFERRED=""
 cd /var/lib/flatpak/repo/refs/remotes/flathub
-for ref in $(find . -type f | sed 's|^\./||' | sort); do
+for ref in $(find app runtime -type f 2>/dev/null | sort); do
     commit=$(cat "${ref}")
     meta="/var/lib/flatpak/repo/objects/$(echo "${commit}" | cut -c1-2)/$(echo "${commit}" | cut -c3-).commitmeta"
     if [ "$(wc -c < "${meta}")" -gt 100000 ]; then
