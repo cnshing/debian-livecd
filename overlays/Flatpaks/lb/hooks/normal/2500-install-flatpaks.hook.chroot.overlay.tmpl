@@ -1,0 +1,66 @@
+#!/bin/sh
+# Install Flatpaks into the live filesystem.
+#
+# A chroot cannot create user namespaces (kernel 3151527ee007: current_chrooted()
+# -> EPERM) and its "/" is not a mount point, so bwrap cannot run here. That
+# only affects refs using the "extra data" mechanism, which run an apply_extra
+# script inside bwrap at DEPLOY time.
+#
+# So: pull everything here (--no-deploy fetches extra-data payloads into the
+# commit's detached metadata without invoking apply_extra), deploy everything
+# that isn't extra-data here, and defer the rest to first boot where bwrap
+# works. Deferred payloads are already on the ISO, so that needs no network.
+#
+# Extra-data refs are identified by detached commit metadata size: signature-only
+# is ~592 bytes, one carrying an xa.extra-data payload is orders of magnitude
+# larger.
+
+set -eu
+
+PKGS="{{ overlay.config.packages | join(' ') }}"
+[ -n "${PKGS}" ] || exit 0
+
+DEFER_LIST=/usr/lib/debian-livecd/flatpak-deferred.refs
+
+trap 'rm -rf /var/tmp/flatpak-cache-* /root/.cache/flatpak /root/.local/share/flatpak' EXIT
+
+flatpak --system remote-add --if-not-exists flathub \
+    https://dl.flathub.org/repo/flathub.flatpakrepo
+
+# Must precede the pull: this decides which .Locale subpaths are fetched, not
+# just which are deployed. Unrestricted, org.freedesktop.Platform.Locale is ~824M.
+flatpak --system config --set languages "{{ overlay.config.languages | default('en') }}"
+
+for id in ${PKGS}; do
+    flatpak --system install --no-deploy -y --noninteractive flathub "${id}"
+done
+
+flatpak --system update --appstream -y
+
+# Classify the pulled closure by commitmeta size.
+PLAIN=""
+DEFERRED=""
+cd /var/lib/flatpak/repo/refs/remotes/flathub
+for ref in $(find . -type f | sed 's|^\./||' | sort); do
+    commit=$(cat "${ref}")
+    meta="/var/lib/flatpak/repo/objects/$(echo "${commit}" | cut -c1-2)/$(echo "${commit}" | cut -c3-).commitmeta"
+    if [ "$(wc -c < "${meta}")" -gt 100000 ]; then
+        DEFERRED="${DEFERRED} ${ref}"
+    else
+        PLAIN="${PLAIN} ${ref}"
+    fi
+done
+cd /
+
+# One invocation so the transaction orders runtimes before their extensions.
+flatpak --system install --no-pull -y --noninteractive flathub ${PLAIN}
+
+mkdir -p "$(dirname "${DEFER_LIST}")"
+printf '%s\n' ${DEFERRED} > "${DEFER_LIST}"
+
+# flatpak runs these itself via bwrap and only warns when that fails, which it
+# always does here. Without them, exported apps have no icons and never appear
+# in the shell overview.
+for t in /usr/share/flatpak/triggers/*.trigger; do
+    "${t}" /var/lib/flatpak
+done
