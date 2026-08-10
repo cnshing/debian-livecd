@@ -1,23 +1,22 @@
 #!/bin/sh
-# AI generated code
 # TEMPORARY verification hook. Delete before merging.
 #
-# Verifies every assumption behind the "pull at build, deploy at first boot"
-# design, in a bare chroot (the worst case). Expect 5-15 min and ~2-3 GB.
+# Verifies that explicitly enumerating the pulled closure and deploying it
+# offline actually deploys ALL of it -- the gap found in the previous run,
+# where an offline `--no-pull` of the app alone deployed only 2 of 8 refs.
 #
 # NOTE: rendered as a Jinja2 template by src/util.py -- no double-brace or
 # brace-percent sequences.
 # NOTE: lb_chroot_hooks aborts the build on non-zero exit. This never fails.
-# Grep the build log for VERIFY.
+# Grep the build log for ENUM.
 
-M="VERIFY"
+M="ENUM"
 PKGS="{{ overlay.config.packages | join(' ') }}"
 
 say() { echo "${M}: $*"; }
 hdr() { echo "${M}:"; echo "${M}: ===== $* ====="; }
 note() { echo "${M}: >>> $*"; }
 
-# run LABEL CMD... -- no eval, so quoting is safe
 run() {
     _label="$1"; shift
     _out=$("$@" 2>&1); _rc=$?
@@ -27,16 +26,13 @@ run() {
     unset _label _out _rc
 }
 
-SCRATCH=/var/tmp/verify-all
+SCRATCH=/var/tmp/verify-enum
 export FLATPAK_SYSTEM_DIR="${SCRATCH}/system"
 export FLATPAK_SYSTEM_CACHE_DIR="${SCRATCH}/cache-warm"
 export FLATPAK_DOWNLOAD_TMPDIR="${SCRATCH}/tmp"
 REPO="${FLATPAK_SYSTEM_DIR}/repo"
 mkdir -p "${FLATPAK_SYSTEM_DIR}" "${FLATPAK_SYSTEM_CACHE_DIR}" "${FLATPAK_DOWNLOAD_TMPDIR}"
 
-ARCH="$(flatpak --default-arch 2>/dev/null)"
-
-# commitmeta_size REF -> bytes of detached metadata, or 0
 commitmeta_size() {
     _c=$(cat "${REPO}/refs/remotes/flathub/$1" 2>/dev/null)
     [ -z "${_c}" ] && { echo 0; return; }
@@ -44,81 +40,42 @@ commitmeta_size() {
     if [ -f "${_f}" ]; then wc -c < "${_f}" | tr -d ' '; else echo 0; fi
     unset _c _f
 }
-
 all_repo_refs() {
     (cd "${REPO}/refs/remotes/flathub" 2>/dev/null && find . -type f | sed 's|^\./||' | sort)
 }
+# ground truth: does <system>/<ref>/active exist?
+is_deployed() { [ -e "${FLATPAK_SYSTEM_DIR}/$1/active" ]; }
 
 # ===========================================================================
-hdr "0. preconditions"
-say "  flatpak: $(flatpak --version 2>&1)   arch: ${ARCH}"
-say "  package list from config.yaml: ${PKGS}"
-say "  free space: $(df -h /var/tmp | tail -n1)"
+hdr "0. pull the closure (--no-deploy), same as before"
 run "remote-add flathub" \
     flatpak --system remote-add --if-not-exists flathub \
         https://dl.flathub.org/repo/flathub.flatpakrepo
-
-# ===========================================================================
-hdr "1. classifier: does [Extra Data] in remote metadata identify the right refs?"
-note "Prediction: parsec EXTRA, rustdesk PLAIN, openh264 EXTRA, Platform PLAIN."
-CLASSIFY="${PKGS} org.freedesktop.Platform.openh264 org.freedesktop.Platform"
-for id in ${CLASSIFY}; do
-    md=$(flatpak --system remote-info --show-metadata flathub "${id}" 2>/dev/null)
-    if [ -z "${md}" ]; then
-        say "  ${id}: <remote-info returned nothing>"
-    elif echo "${md}" | grep -q '^\[Extra Data\]'; then
-        say "  ${id}: EXTRA  (NoRuntime=$(echo "${md}" | sed -n 's/^NoRuntime=//p' | head -n1))"
-    else
-        say "  ${id}: PLAIN"
-    fi
-done
-
-# ===========================================================================
-hdr "2. build-time pull: --no-deploy for the real package list"
 for id in ${PKGS}; do
     run "install --no-deploy ${id}" \
         flatpak --system install --no-deploy -y --noninteractive flathub "${id}"
 done
 
-note "Full dependency closure now in the repo (runtimes+locales must appear):"
-all_repo_refs | sed "s|^|${M}:        \| |"
-
-note "commitmeta per ref -- LARGE(>100k) means embedded xa.extra-data payload:"
-all_repo_refs | while read -r r; do
+# ===========================================================================
+hdr "1. enumerate + classify by commitmeta size (592 = plain, ~1.5M = extra-data)"
+PLAIN=""; EXTRA=""
+for r in $(all_repo_refs); do
     sz=$(commitmeta_size "${r}")
-    if [ "${sz}" -gt 100000 ]; then tag="EXTRA-DATA"; else tag="plain"; fi
-    printf "%s:        | %-12s %10s  %s\n" "${M}" "${tag}" "${sz}" "${r}"
+    if [ "${sz}" -gt 100000 ]; then
+        EXTRA="${EXTRA} ${r}"; printf "%s:   EXTRA %10s  %s\n" "${M}" "${sz}" "${r}"
+    else
+        PLAIN="${PLAIN} ${r}"; printf "%s:   plain %10s  %s\n" "${M}" "${sz}" "${r}"
+    fi
 done
-
-note "Cross-check: the EXTRA-DATA rows above must match the EXTRA rows in phase 1."
-say "  nothing deployed yet (expect empty):"
-flatpak --system list --columns=ref 2>&1 | sed "s|^|${M}:        \| |"
-say "  repo size: $(du -sh "${REPO}" 2>/dev/null | cut -f1)"
+say "  plain count: $(echo ${PLAIN} | wc -w)   extra count: $(echo ${EXTRA} | wc -w)"
 
 # ===========================================================================
-hdr "3. build-rerun idempotency (does a second CI build re-download?)"
-T0=$(date +%s)
-for id in ${PKGS}; do
-    run "re-run --no-deploy ${id}" \
-        flatpak --system install --no-deploy -y --noninteractive flathub "${id}"
-done
-say "  second pass took $(( $(date +%s) - T0 ))s (fast => no re-download)"
-
-# ===========================================================================
-hdr "4. remote config persistence (first boot needs this)"
-say "  repo/config:"
-sed -n '/remote "flathub"/,/^$/p' "${REPO}/config" 2>&1 | sed "s|^|${M}:        \| |"
-run "gpg key present in repo" test -s "${FLATPAK_SYSTEM_DIR}/repo/flathub.trustedkeys.gpg"
-
-# ===========================================================================
-hdr "5. SIMULATED FIRST BOOT: cold cache + no network + clean HOME"
-note "Wiping every cache, so nothing survives from the pulls above."
+hdr "2. go cold + offline"
 rm -rf "${SCRATCH}/cache-warm" /var/tmp/flatpak-cache-* \
        "${HOME}/.cache/flatpak" "${HOME}/.local/share/flatpak"
 FAKEHOME="${SCRATCH}/fakehome"; rm -rf "${FAKEHOME}"; mkdir -p "${FAKEHOME}"
 COLDCACHE="${SCRATCH}/cache-cold"; mkdir -p "${COLDCACHE}"
 
-# offline LABEL REF... -- unshare -n + env -i + fresh HOME + empty cache
 offline() {
     _label="$1"; shift
     run "${_label}" unshare -n env -i \
@@ -130,46 +87,84 @@ offline() {
     unset _label
 }
 
-note "5a. Does bare-ID resolution work offline, or is a full ref required?"
-note "    This decides how the first-boot unit must name its refs."
-offline "offline --no-pull by bare ID (com.rustdesk.RustDesk)" \
-    flathub com.rustdesk.RustDesk
+# ===========================================================================
+hdr "3. TEST A: all plain refs in ONE invocation (lets the transaction order them)"
+note "Single call so runtimes are deployed before their extensions."
+offline "deploy $(echo ${PLAIN} | wc -w) plain refs at once" flathub ${PLAIN}
 
-note "5b. Same thing by fully-qualified ref, as a fallback."
-offline "offline --no-pull by full ref (rustdesk)" \
-    flathub "app/com.rustdesk.RustDesk/${ARCH}/stable"
+note "Ground truth -- deploy dir present on disk? (not trusting flatpak list)"
+MISSING=""
+for r in ${PLAIN}; do
+    if is_deployed "${r}"; then
+        printf "%s:   DEPLOYED  %8s  %s\n" "${M}" \
+            "$(du -sh "${FLATPAK_SYSTEM_DIR}/${r}" 2>/dev/null | cut -f1)" "${r}"
+    else
+        MISSING="${MISSING} ${r}"
+        printf "%s:   MISSING             %s\n" "${M}" "${r}"
+    fi
+done
+if [ -z "${MISSING}" ]; then
+    note "ALL plain refs deployed by a single call. Enumeration works."
+else
+    note "STILL MISSING:${MISSING}"
+fi
 
-note "5c. Did the runtime deps get deployed automatically? (we only asked for the app)"
-flatpak --system list --columns=ref,origin 2>&1 | sed "s|^|${M}:        \| |"
+# ===========================================================================
+hdr "4. TEST B: per-ref loop for anything test A missed"
+if [ -z "${MISSING}" ]; then
+    say "  nothing missing -- skipped"
+else
+    for r in ${MISSING}; do
+        offline "deploy single ref ${r}" flathub "${r}"
+        if is_deployed "${r}"; then say "  -> now DEPLOYED: ${r}"
+        else say "  -> STILL MISSING: ${r}"; fi
+    done
+fi
 
-note "5d. Idempotency: re-running the unit must be a no-op, not an error."
-offline "offline --no-pull rustdesk AGAIN" flathub com.rustdesk.RustDesk
+# ===========================================================================
+hdr "5. cross-check: what does flatpak list report vs the filesystem?"
+note "If list shows fewer than the DEPLOYED count above, the previous run's"
+note "'only 2 of 8' finding was a reporting artefact, not a real gap."
+flatpak --system list --columns=ref,options 2>&1 | sed "s|^|${M}:        \| |"
+say "  filesystem deploy dirs:"
+find "${FLATPAK_SYSTEM_DIR}/app" "${FLATPAK_SYSTEM_DIR}/runtime" \
+     -name active -maxdepth 4 2>/dev/null \
+    | sed "s|${FLATPAK_SYSTEM_DIR}/||; s|/active$||" | sort \
+    | sed "s|^|${M}:        \| |"
 
-note "5e. EXTRA-DATA offline deploy. In a chroot bwrap cannot run, so this WILL"
-note "    fail -- read the error text:"
-note "      'apply_extra script failed'               -> extra data found locally. GOOD."
-note "      'Extra data missing in detached metadata' -> payload absent. BAD."
-note "      any HTTP/network/summary error            -> it phoned home. BAD."
-for id in ${PKGS}; do
-    md=$(cat "${SCRATCH}/.md-${id}" 2>/dev/null)
-    offline "offline --no-pull ${id}" flathub "${id}"
+note "'partial' in the options column = subpath install (small)."
+note "No 'partial' on .Locale means we deployed EVERY language -- size risk."
+
+# ===========================================================================
+hdr "6. exports + trigger staleness (predicts the ISO app-grid symptom)"
+say "  .desktop files exported:"
+ls "${FLATPAK_SYSTEM_DIR}/exports/share/applications/" 2>&1 \
+    | sed "s|^|${M}:        \| |"
+for f in exports/share/applications/mimeinfo.cache \
+         exports/share/icons/hicolor/icon-theme.cache; do
+    if [ -e "${FLATPAK_SYSTEM_DIR}/${f}" ]; then say "  present: ${f}"
+    else say "  ABSENT:  ${f}   (triggers skipped -- must regenerate on first boot)"; fi
 done
 
 # ===========================================================================
-hdr "6. accounting"
+hdr "7. extra-data refs still reach apply_extra with runtimes now deployed"
+note "Runtime is deployed now, so flatpak_find_deploy_for_ref() should succeed"
+note "and we should get 'apply_extra script failed' (bwrap), NOT a missing-runtime error."
+for r in ${EXTRA}; do
+    offline "offline deploy ${r}" flathub "${r}"
+done
+
+# ===========================================================================
+hdr "8. accounting"
 say "  repo:            $(du -sh "${REPO}" 2>/dev/null | cut -f1)"
 say "  app deploys:     $(du -sh "${FLATPAK_SYSTEM_DIR}/app" 2>/dev/null | cut -f1)"
 say "  runtime deploys: $(du -sh "${FLATPAK_SYSTEM_DIR}/runtime" 2>/dev/null | cut -f1)"
 say "  TOTAL:           $(du -sh "${FLATPAK_SYSTEM_DIR}" 2>/dev/null | cut -f1)"
-note "repo+deploys should be well under their sum if hardlinking works;"
-note "if TOTAL is roughly repo+deploys, the squashfs pays for both copies."
+note "TOTAL near repo size = hardlinked. TOTAL near repo+deploys = paying twice."
 
-# ===========================================================================
 hdr "cleanup"
-say "  removing $(du -sh "${SCRATCH}" 2>/dev/null | cut -f1)"
 rm -rf "${SCRATCH}" /var/tmp/flatpak-cache-*
 rm -rf "${HOME}/.cache/flatpak" "${HOME}/.local/share/flatpak"
-say "  done -- nothing should leak into the squashfs"
-
+say "  done"
 hdr "done"
 exit 0
