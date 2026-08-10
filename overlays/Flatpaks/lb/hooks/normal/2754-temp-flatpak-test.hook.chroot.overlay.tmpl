@@ -1,175 +1,175 @@
 #!/bin/sh
 # AI generated code
-# TEMPORARY diagnostic hook. Delete once --no-deploy is validated.
+# TEMPORARY verification hook. Delete before merging.
 #
-# Thesis under test: `flatpak install --no-deploy` pulls extra-data payloads
-# into the local repo's detached commit metadata (xa.extra-data) WITHOUT ever
-# invoking bwrap, so it works in a plain chroot. A later --no-pull deploy can
-# then read that payload with no network.
-#
-# Deliberately a .hook.chroot, NOT .hook.container: if this passes in a bare
-# chroot, the thesis holds.
+# Verifies every assumption behind the "pull at build, deploy at first boot"
+# design, in a bare chroot (the worst case). Expect 5-15 min and ~2-3 GB.
 #
 # NOTE: rendered as a Jinja2 template by src/util.py -- no double-brace or
 # brace-percent sequences.
-#
 # NOTE: lb_chroot_hooks aborts the build on non-zero exit. This never fails.
-# Grep the build log for NODEPLOY.
+# Grep the build log for VERIFY.
 
-M="NODEPLOY"
-
-# Set to 1 to also pull Parsec. Costs ~1GB (drags in org.freedesktop.Platform)
-# and several minutes. openh264 exercises the identical code path for ~2MB.
-TEST_PARSEC=0
+M="VERIFY"
+PKGS="{{ overlay.config.packages | join(' ') }}"
 
 say() { echo "${M}: $*"; }
 hdr() { echo "${M}:"; echo "${M}: ===== $* ====="; }
+note() { echo "${M}: >>> $*"; }
 
-try() {
-    _label="$1"; _cmd="$2"
-    _out=$(eval "${_cmd}" 2>&1); _rc=$?
+# run LABEL CMD... -- no eval, so quoting is safe
+run() {
+    _label="$1"; shift
+    _out=$("$@" 2>&1); _rc=$?
     if [ "${_rc}" -eq 0 ]; then say "PASS      ${_label}"
     else say "FAIL rc=${_rc}  ${_label}"; fi
-    if [ -n "${_out}" ]; then
-        echo "${_out}" | sed "s|^|${M}:        \| |"
-    fi
-    unset _label _cmd _out _rc
+    [ -n "${_out}" ] && echo "${_out}" | sed "s|^|${M}:        \| |"
+    unset _label _out _rc
 }
 
-# Scratch installation: cannot collide with 2500-install-flatpaks whichever
-# order live-build runs hooks/normal and hooks/live in.
-SCRATCH=/var/tmp/nodeploy-test
+SCRATCH=/var/tmp/verify-all
 export FLATPAK_SYSTEM_DIR="${SCRATCH}/system"
-export FLATPAK_SYSTEM_CACHE_DIR="${SCRATCH}/cache"
+export FLATPAK_SYSTEM_CACHE_DIR="${SCRATCH}/cache-warm"
 export FLATPAK_DOWNLOAD_TMPDIR="${SCRATCH}/tmp"
 REPO="${FLATPAK_SYSTEM_DIR}/repo"
 mkdir -p "${FLATPAK_SYSTEM_DIR}" "${FLATPAK_SYSTEM_CACHE_DIR}" "${FLATPAK_DOWNLOAD_TMPDIR}"
 
-hdr "setup"
-say "  flatpak: $(flatpak --version 2>&1)"
-say "  scratch: ${FLATPAK_SYSTEM_DIR}"
-say "  ostree CLI: $(command -v ostree || echo '<absent, will use find(1) instead>')"
-say "  unshare:    $(command -v unshare || echo '<absent, offline test will be skipped>')"
+ARCH="$(flatpak --default-arch 2>/dev/null)"
 
-try "remote-add flathub" \
-    "flatpak --system remote-add --if-not-exists flathub \
-        https://dl.flathub.org/repo/flathub.flatpakrepo"
-
-ARCH="$(flatpak --default-arch)"
-
-# Resolve refs from the remote rather than hardcoding branches.
-OH264=$(flatpak --system remote-ls flathub --arch="${ARCH}" --columns=ref 2>/dev/null \
-        | grep 'org\.freedesktop\.Platform\.openh264' | tail -n 1)
-CTRL=$(flatpak --system remote-ls flathub --arch="${ARCH}" --columns=ref 2>/dev/null \
-        | grep 'org\.gtk\.Gtk3theme\.Adwaita-dark' | tail -n 1)
-
-say "  extra-data ref: ${OH264:-<unresolved>}"
-say "  control ref:    ${CTRL:-<unresolved>}"
-
-# commitmeta_size REF -- size in bytes of the detached metadata blob, or 0.
-# Detached metadata lives at repo/objects/<xx>/<rest>.commitmeta.
+# commitmeta_size REF -> bytes of detached metadata, or 0
 commitmeta_size() {
-    _ref="$1"
-    _commit=$(cat "${REPO}/refs/remotes/flathub/${_ref}" 2>/dev/null)
-    [ -z "${_commit}" ] && { echo 0; return; }
-    _f="${REPO}/objects/$(echo "${_commit}" | cut -c1-2)/$(echo "${_commit}" | cut -c3-).commitmeta"
+    _c=$(cat "${REPO}/refs/remotes/flathub/$1" 2>/dev/null)
+    [ -z "${_c}" ] && { echo 0; return; }
+    _f="${REPO}/objects/$(echo "${_c}" | cut -c1-2)/$(echo "${_c}" | cut -c3-).commitmeta"
     if [ -f "${_f}" ]; then wc -c < "${_f}" | tr -d ' '; else echo 0; fi
-    unset _ref _commit _f
+    unset _c _f
 }
 
-# ---------------------------------------------------------------------------
-hdr "1. extra-data ref: pull with --no-deploy (must NOT touch bwrap)"
-if [ -z "${OH264}" ]; then
-    say "  ref unresolved -- skipping"
-else
-    try "install --no-deploy ${OH264}" \
-        "flatpak --system install --no-deploy -y --noninteractive flathub '${OH264}'"
+all_repo_refs() {
+    (cd "${REPO}/refs/remotes/flathub" 2>/dev/null && find . -type f | sed 's|^\./||' | sort)
+}
 
-    say "  refs now in repo:"
-    (cd "${REPO}/refs/remotes" 2>/dev/null && find . -type f | sed 's|^\./||') \
-        | sed "s|^|${M}:        \| |"
+# ===========================================================================
+hdr "0. preconditions"
+say "  flatpak: $(flatpak --version 2>&1)   arch: ${ARCH}"
+say "  package list from config.yaml: ${PKGS}"
+say "  free space: $(df -h /var/tmp | tail -n1)"
+run "remote-add flathub" \
+    flatpak --system remote-add --if-not-exists flathub \
+        https://dl.flathub.org/repo/flathub.flatpakrepo
 
-    SZ=$(commitmeta_size "${OH264}")
-    say "  commitmeta size for ${OH264}: ${SZ} bytes"
-    if [ "${SZ}" -gt 100000 ]; then
-        say "  ==> LARGE: consistent with an embedded xa.extra-data payload. GOOD."
-    elif [ "${SZ}" -gt 0 ]; then
-        say "  ==> small: signature-only commitmeta, payload probably NOT embedded."
+# ===========================================================================
+hdr "1. classifier: does [Extra Data] in remote metadata identify the right refs?"
+note "Prediction: parsec EXTRA, rustdesk PLAIN, openh264 EXTRA, Platform PLAIN."
+CLASSIFY="${PKGS} org.freedesktop.Platform.openh264 org.freedesktop.Platform"
+for id in ${CLASSIFY}; do
+    md=$(flatpak --system remote-info --show-metadata flathub "${id}" 2>/dev/null)
+    if [ -z "${md}" ]; then
+        say "  ${id}: <remote-info returned nothing>"
+    elif echo "${md}" | grep -q '^\[Extra Data\]'; then
+        say "  ${id}: EXTRA  (NoRuntime=$(echo "${md}" | sed -n 's/^NoRuntime=//p' | head -n1))"
     else
-        say "  ==> ABSENT: no detached metadata at all."
+        say "  ${id}: PLAIN"
     fi
+done
 
-    if command -v ostree >/dev/null 2>&1; then
-        COMMIT=$(cat "${REPO}/refs/remotes/flathub/${OH264}" 2>/dev/null)
-        try "xa.extra-data key present (byte count of printed value)" \
-            "ostree --repo='${REPO}' show --print-detached-metadata-key=xa.extra-data \
-                '${COMMIT}' | wc -c"
-    fi
+# ===========================================================================
+hdr "2. build-time pull: --no-deploy for the real package list"
+for id in ${PKGS}; do
+    run "install --no-deploy ${id}" \
+        flatpak --system install --no-deploy -y --noninteractive flathub "${id}"
+done
 
-    say "  deployed anything? (expect NOTHING listed)"
-    flatpak --system list --columns=ref 2>&1 | sed "s|^|${M}:        \| |"
-    say "  deploy dirs under runtime/ (expect none):"
-    find "${FLATPAK_SYSTEM_DIR}/runtime" -maxdepth 1 -mindepth 1 2>/dev/null \
-        | sed "s|^|${M}:        \| |"
-fi
+note "Full dependency closure now in the repo (runtimes+locales must appear):"
+all_repo_refs | sed "s|^|${M}:        \| |"
 
-# ---------------------------------------------------------------------------
-hdr "2. control (non-extra-data): --no-deploy then offline --no-pull deploy"
-if [ -z "${CTRL}" ]; then
-    say "  ref unresolved -- skipping"
-else
-    try "install --no-deploy ${CTRL}" \
-        "flatpak --system install --no-deploy -y --noninteractive flathub '${CTRL}'"
-    if command -v unshare >/dev/null 2>&1; then
-        try "OFFLINE deploy via --no-pull (expect PASS)" \
-            "unshare -n flatpak --system install --no-pull -y --noninteractive \
-                flathub '${CTRL}'"
-        say "  deployed now:"
-        flatpak --system list --columns=ref 2>&1 | sed "s|^|${M}:        \| |"
-    else
-        say "  unshare absent -- skipping offline half"
-    fi
-fi
+note "commitmeta per ref -- LARGE(>100k) means embedded xa.extra-data payload:"
+all_repo_refs | while read -r r; do
+    sz=$(commitmeta_size "${r}")
+    if [ "${sz}" -gt 100000 ]; then tag="EXTRA-DATA"; else tag="plain"; fi
+    printf "%s:        | %-12s %10s  %s\n" "${M}" "${tag}" "${sz}" "${r}"
+done
 
-# ---------------------------------------------------------------------------
-hdr "3. THE DECISIVE TEST: offline --no-pull deploy of the extra-data ref"
-say "  Read the error text, not the exit code. In a chroot bwrap cannot run,"
-say "  so this is EXPECTED to fail. What matters is HOW:"
-say "    'apply_extra script failed'            -> extra data WAS found locally."
-say "                                              Offline path works. THESIS HOLDS."
-say "    'Extra data missing in detached metadata' -> payload not stored."
-say "                                              THESIS FAILS."
-say "    any network/HTTP error                 -> it tried to download."
-say "                                              THESIS FAILS."
-if [ -z "${OH264}" ]; then
-    say "  ref unresolved -- skipping"
-elif ! command -v unshare >/dev/null 2>&1; then
-    say "  unshare absent -- skipping"
-else
-    try "OFFLINE deploy via --no-pull ${OH264}" \
-        "unshare -n flatpak --system install --no-pull -y --noninteractive \
-            flathub '${OH264}'"
-fi
+note "Cross-check: the EXTRA-DATA rows above must match the EXTRA rows in phase 1."
+say "  nothing deployed yet (expect empty):"
+flatpak --system list --columns=ref 2>&1 | sed "s|^|${M}:        \| |"
+say "  repo size: $(du -sh "${REPO}" 2>/dev/null | cut -f1)"
 
-# ---------------------------------------------------------------------------
-hdr "4. optional: Parsec (the app that actually failed)"
-if [ "${TEST_PARSEC}" != "1" ]; then
-    say "  skipped (set TEST_PARSEC=1 at the top of this hook to enable)"
-else
-    PARSEC="app/com.parsecgaming.parsec/${ARCH}/stable"
-    try "install --no-deploy ${PARSEC}" \
-        "flatpak --system install --no-deploy -y --noninteractive flathub '${PARSEC}'"
-    say "  commitmeta size for ${PARSEC}: $(commitmeta_size "${PARSEC}") bytes"
-    say "  repo size: $(du -sh "${REPO}" 2>/dev/null | cut -f1)"
-fi
+# ===========================================================================
+hdr "3. build-rerun idempotency (does a second CI build re-download?)"
+T0=$(date +%s)
+for id in ${PKGS}; do
+    run "re-run --no-deploy ${id}" \
+        flatpak --system install --no-deploy -y --noninteractive flathub "${id}"
+done
+say "  second pass took $(( $(date +%s) - T0 ))s (fast => no re-download)"
 
-# ---------------------------------------------------------------------------
+# ===========================================================================
+hdr "4. remote config persistence (first boot needs this)"
+say "  repo/config:"
+sed -n '/remote "flathub"/,/^$/p' "${REPO}/config" 2>&1 | sed "s|^|${M}:        \| |"
+run "gpg key present in repo" test -s "${FLATPAK_SYSTEM_DIR}/repo/flathub.trustedkeys.gpg"
+
+# ===========================================================================
+hdr "5. SIMULATED FIRST BOOT: cold cache + no network + clean HOME"
+note "Wiping every cache, so nothing survives from the pulls above."
+rm -rf "${SCRATCH}/cache-warm" /var/tmp/flatpak-cache-* \
+       "${HOME}/.cache/flatpak" "${HOME}/.local/share/flatpak"
+FAKEHOME="${SCRATCH}/fakehome"; rm -rf "${FAKEHOME}"; mkdir -p "${FAKEHOME}"
+COLDCACHE="${SCRATCH}/cache-cold"; mkdir -p "${COLDCACHE}"
+
+# offline LABEL REF... -- unshare -n + env -i + fresh HOME + empty cache
+offline() {
+    _label="$1"; shift
+    run "${_label}" unshare -n env -i \
+        HOME="${FAKEHOME}" \
+        PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" \
+        FLATPAK_SYSTEM_DIR="${FLATPAK_SYSTEM_DIR}" \
+        FLATPAK_SYSTEM_CACHE_DIR="${COLDCACHE}" \
+        flatpak --system install --no-pull -y --noninteractive "$@"
+    unset _label
+}
+
+note "5a. Does bare-ID resolution work offline, or is a full ref required?"
+note "    This decides how the first-boot unit must name its refs."
+offline "offline --no-pull by bare ID (com.rustdesk.RustDesk)" \
+    flathub com.rustdesk.RustDesk
+
+note "5b. Same thing by fully-qualified ref, as a fallback."
+offline "offline --no-pull by full ref (rustdesk)" \
+    flathub "app/com.rustdesk.RustDesk/${ARCH}/stable"
+
+note "5c. Did the runtime deps get deployed automatically? (we only asked for the app)"
+flatpak --system list --columns=ref,origin 2>&1 | sed "s|^|${M}:        \| |"
+
+note "5d. Idempotency: re-running the unit must be a no-op, not an error."
+offline "offline --no-pull rustdesk AGAIN" flathub com.rustdesk.RustDesk
+
+note "5e. EXTRA-DATA offline deploy. In a chroot bwrap cannot run, so this WILL"
+note "    fail -- read the error text:"
+note "      'apply_extra script failed'               -> extra data found locally. GOOD."
+note "      'Extra data missing in detached metadata' -> payload absent. BAD."
+note "      any HTTP/network/summary error            -> it phoned home. BAD."
+for id in ${PKGS}; do
+    md=$(cat "${SCRATCH}/.md-${id}" 2>/dev/null)
+    offline "offline --no-pull ${id}" flathub "${id}"
+done
+
+# ===========================================================================
+hdr "6. accounting"
+say "  repo:            $(du -sh "${REPO}" 2>/dev/null | cut -f1)"
+say "  app deploys:     $(du -sh "${FLATPAK_SYSTEM_DIR}/app" 2>/dev/null | cut -f1)"
+say "  runtime deploys: $(du -sh "${FLATPAK_SYSTEM_DIR}/runtime" 2>/dev/null | cut -f1)"
+say "  TOTAL:           $(du -sh "${FLATPAK_SYSTEM_DIR}" 2>/dev/null | cut -f1)"
+note "repo+deploys should be well under their sum if hardlinking works;"
+note "if TOTAL is roughly repo+deploys, the squashfs pays for both copies."
+
+# ===========================================================================
 hdr "cleanup"
-say "  scratch repo size before removal: $(du -sh "${SCRATCH}" 2>/dev/null | cut -f1)"
-rm -rf "${SCRATCH}"
-rm -rf /var/tmp/flatpak-cache-*
+say "  removing $(du -sh "${SCRATCH}" 2>/dev/null | cut -f1)"
+rm -rf "${SCRATCH}" /var/tmp/flatpak-cache-*
 rm -rf "${HOME}/.cache/flatpak" "${HOME}/.local/share/flatpak"
-say "  removed (nothing should leak into the squashfs)"
+say "  done -- nothing should leak into the squashfs"
 
 hdr "done"
 exit 0
