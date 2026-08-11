@@ -1,0 +1,48 @@
+#!/bin/sh
+# Pull all configured flatpaks, and install only the flatpaks that can safely be installed in the chroot stage.
+#
+# A chroot cannot create user namespaces (kernel 3151527ee007: current_chrooted()
+# -> EPERM) and its "/" is not a mount point, so bwrap cannot run here. Deploying
+# an "extra data" ref runs its apply_extra script inside bwrap, so those refs can
+# only be pulled now and deployed at boot.
+#
+# Extra-data refs are identified by detached commit metadata size: signature-only
+# is ~592 bytes, one carrying an xa.extra-data payload is orders of magnitude
+# larger. /lib/live/config/2500-flatpaks repeats this same test at boot, so
+# nothing has to be handed between the two.
+
+set -eu
+
+PKGS="{{ overlay.config.packages | join(' ') }}"
+[ -n "${PKGS}" ] || exit 0
+
+trap 'rm -rf /var/tmp/flatpak-cache-* /root/.cache/flatpak /root/.local/share/flatpak' EXIT
+
+flatpak --system remote-add --if-not-exists flathub \
+    https://dl.flathub.org/repo/flathub.flatpakrepo
+
+for id in ${PKGS}; do
+    flatpak --system install --no-deploy -y --noninteractive flathub "${id}"
+done
+
+# Also creates appstream/ and appstream2/ refs, and deploys them itself.
+flatpak --system update --appstream -y
+
+# Only app/ and runtime/ are installable refs; appstream2/x86_64 would fail id
+# validation.
+DEPLOYABLE=""
+cd /var/lib/flatpak/repo/refs/remotes/flathub
+for ref in $(find app runtime -type f 2>/dev/null | sort); do
+    commit=$(cat "${ref}")
+    meta="/var/lib/flatpak/repo/objects/$(echo "${commit}" | cut -c1-2)/$(echo "${commit}" | cut -c3-).commitmeta"
+    [ "$(wc -c < "${meta}")" -gt 100000 ] && continue
+    DEPLOYABLE="${DEPLOYABLE} ${ref}"
+done
+cd /
+
+# One invocation so the transaction orders runtimes before their extensions.
+flatpak --system install --no-pull -y --noninteractive flathub ${DEPLOYABLE}
+
+for t in /usr/share/flatpak/triggers/*.trigger; do
+    "${t}" /var/lib/flatpak
+done
