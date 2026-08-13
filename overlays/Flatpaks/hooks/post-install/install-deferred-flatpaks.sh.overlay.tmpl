@@ -1,48 +1,27 @@
 #!/bin/sh
-# Pull all configured flatpaks, and deploy the ones that can be deployed here.
+# Deploy the flatpaks the 2500 chroot hook pulled but could not deploy.
 #
-# A chroot cannot create user namespaces (kernel 3151527ee007: current_chrooted()
-# -> EPERM) and its "/" is not a mount point, so bwrap cannot run here. Deploying
-# an "extra data" ref runs its apply_extra script inside bwrap, so those refs are
-# only pulled now and deployed at boot.
-#
-# Extra-data refs are identified by detached commit metadata size: signature-only
-# is ~592 bytes, one carrying an xa.extra-data payload is orders of magnitude
-# larger. The boot-time script repeats this same test against the same repo, so
-# nothing has to be handed between the two.
-
+# Deploying an extra-data ref runs its apply_extra script inside bwrap, and bwrap
+# cannot run in a chroot (no user namespaces, "/" is not a mount point). The hook
+# pulled the full closure -- extra-data payloads included, they live in the
+# commit's detached metadata -- and deployed only what it could. A ref in the
+# mirror with no deployment is exactly one of those leftovers, so everything
+# needed is already on disk and nothing here may pull.
 set -eu
 
 PKGS="{{ overlay.config.packages | join(' ') }}"
 [ -n "${PKGS}" ] || exit 0
 
-trap 'rm -rf /var/tmp/flatpak-cache-* /root/.cache/flatpak /root/.local/share/flatpak' EXIT
-
-flatpak --system remote-add --if-not-exists flathub \
-    https://dl.flathub.org/repo/flathub.flatpakrepo
-
-for id in ${PKGS}; do
-    flatpak --system install --no-deploy -y --noninteractive flathub "${id}"
-done
-
-# Also creates appstream/ and appstream2/ refs, and deploys them itself.
-flatpak --system update --appstream -y
-
 # Only app/ and runtime/ are installable refs; appstream2/x86_64 would fail id
 # validation.
-DEPLOYABLE=""
+PENDING=""
 cd /var/lib/flatpak/repo/refs/remotes/flathub
 for ref in $(find app runtime -type f 2>/dev/null | sort); do
-    commit=$(cat "${ref}")
-    meta="/var/lib/flatpak/repo/objects/$(echo "${commit}" | cut -c1-2)/$(echo "${commit}" | cut -c3-).commitmeta"
-    [ "$(wc -c < "${meta}")" -gt 100000 ] && continue
-    DEPLOYABLE="${DEPLOYABLE} ${ref}"
+    [ -e "/var/lib/flatpak/${ref}/active" ] || PENDING="${PENDING} ${ref}"
 done
 cd /
 
-# One invocation so the transaction orders runtimes before their extensions.
-flatpak --system install --no-pull -y --noninteractive flathub ${DEPLOYABLE}
+[ -n "${PENDING}" ] || exit 0
 
-for t in /usr/share/flatpak/triggers/*.trigger; do
-    "${t}" /var/lib/flatpak
-done
+# One invocation so the transaction orders runtimes before their extensions.
+flatpak --system install --no-pull -y --noninteractive flathub ${PENDING}
