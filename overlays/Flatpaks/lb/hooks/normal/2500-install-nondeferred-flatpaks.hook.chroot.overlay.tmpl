@@ -46,3 +46,7 @@ flatpak --system install --no-pull -y --noninteractive flathub ${DEPLOYABLE}
 for t in /usr/share/flatpak/triggers/*.trigger; do
     "${t}" /var/lib/flatpak
 done
+
+if [ -f /usr/lib/live/config/2500-install-deferred-flatpaks.sh ]; then # Allow the deferred flatpak script to run during live boot
+    chmod -vc 0755 /usr/lib/live/config/2500-install-deferred-flatpaks.sh
+fi
