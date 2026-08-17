@@ -19,4 +19,5 @@ overlays:
     packages:
       - com.parsecgaming.parsec
       - com.rustdesk.RustDesk
-  Remote Desktop+Rustdesk: {}
+  Remote Desktop+Rustdesk:
+    tomlPath: /run/live/medium/RustDesk.toml # Configure RustDesk at the live medium directory

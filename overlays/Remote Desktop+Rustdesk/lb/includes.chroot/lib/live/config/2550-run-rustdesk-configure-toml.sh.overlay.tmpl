@@ -1,0 +1,16 @@
+#!/bin/sh
+
+SRC_TOML="{{ overlay.config.tomlPath }}"
+SRC="$(dirname -- "$SRC_TOML")"
+DST="$HOME/.var/app/com.rustdesk.RustDesk/config/rustdesk"
+mkdir -p "$DST"
+if [ -f "$SRC_TOML" ]; then
+    cp -f "$SRC_TOML" "$DST"/RustDesk.toml
+    cp -f "$SRC"/RustDesk2.toml "$DST"/RustDesk2.toml 2>/dev/null || true
+    chmod 600 "$DST"/RustDesk*.toml
+else
+    echo "rustdesk: no config found at $SRC_TOML, skipping" >&2
+fi
+flatpak kill com.rustdesk.RustDesk 2>/dev/null || true   # in case it auto-started early
+sleep 1
+exec flatpak run com.rustdesk.RustDesk
