@@ -70,6 +70,10 @@ async def merge_dirs_templates(a_paths, b_path, deb, overlay=None):
                             else None,
                         )
                     )
+                    os.fchmod(
+                        f.fileno(),
+                        os.fstat(f.fileno()).st_mode | 0o111,
+                    ) # Allow execute of overlay.tmpl files
             if os.path.exists(
                 os.path.join(b_path, path[len(a_path) + 1 :]),
             ):
