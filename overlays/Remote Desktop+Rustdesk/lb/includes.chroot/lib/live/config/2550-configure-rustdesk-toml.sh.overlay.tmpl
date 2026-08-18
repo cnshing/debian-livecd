@@ -11,6 +11,3 @@ if [ -f "$SRC_TOML" ]; then
 else
     echo "rustdesk: no config found at $SRC_TOML, skipping" >&2
 fi
-flatpak kill com.rustdesk.RustDesk 2>/dev/null || true   # in case it auto-started early
-sleep 1
-exec flatpak run com.rustdesk.RustDesk
