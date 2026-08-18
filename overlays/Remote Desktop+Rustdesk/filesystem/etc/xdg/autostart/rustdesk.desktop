@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=RustDesk
+Comment=Start RustDesk Flatpak in tray
+Exec=flatpak run com.rustdesk.RustDesk --tray
+TryExec=flatpak
+Terminal=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
