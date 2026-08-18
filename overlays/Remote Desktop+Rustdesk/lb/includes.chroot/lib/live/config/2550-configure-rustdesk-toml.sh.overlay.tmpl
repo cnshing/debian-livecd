@@ -2,7 +2,7 @@
 
 SRC_TOML="{{ overlay.config.tomlPath }}"
 SRC="$(dirname -- "$SRC_TOML")"
-DST="$HOME/.var/app/com.rustdesk.RustDesk/config/rustdesk"
+DST="/home/${LIVE_USERNAME:-user}/.var/app/com.rustdesk.RustDesk/config/rustdesk"
 mkdir -p "$DST"
 if [ -f "$SRC_TOML" ]; then
     cp -f "$SRC_TOML" "$DST"/RustDesk.toml
