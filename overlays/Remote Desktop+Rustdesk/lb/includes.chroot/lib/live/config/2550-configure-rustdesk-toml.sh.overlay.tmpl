@@ -1,13 +1,20 @@
 #!/bin/sh
 
-SRC_TOML="{{ overlay.config.tomlPath }}"
-SRC="$(dirname -- "$SRC_TOML")"
+RUSTDESK_TOML="{{ overlay.config.configPath.RustDeskToml }}"
+RUSTDESK_TOML2="{{ overlay.config.configPath.RustDesk2Toml }}"
 DST="/home/${LIVE_USERNAME:-user}/.var/app/com.rustdesk.RustDesk/config/rustdesk"
 mkdir -p "$DST"
-if [ -f "$SRC_TOML" ]; then
-    cp -f "$SRC_TOML" "$DST"/RustDesk.toml
-    cp -f "$SRC"/RustDesk2.toml "$DST"/RustDesk2.toml 2>/dev/null || true
-    chmod 600 "$DST"/RustDesk*.toml
+
+if [ -f "$RUSTDESK_TOML" ]; then
+    cp -f "$RUSTDESK_TOML" "$DST"/RustDesk.toml
+    chmod 600 "$DST"/RustDesk.toml
 else
-    echo "rustdesk: no config found at $SRC_TOML, skipping" >&2
+    echo "rustdesk: no config found at $RUSTDESK_TOML, skipping" >&2
+fi
+
+if [ -f "$RUSTDESK_TOML2" ]; then
+    cp -f "$RUSTDESK_TOML2" "$DST"/RustDesk2.toml
+    chmod 600 "$DST"/RustDesk2.toml
+else
+    echo "rustdesk: no config found at $RUSTDESK_TOML2, skipping" >&2
 fi
