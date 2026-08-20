@@ -1,7 +1,7 @@
 #!/bin/sh
 
-RUSTDESK_TOML="{{ overlay.config.configPath.RustDeskToml }}"
-RUSTDESK_TOML2="{{ overlay.config.configPath.RustDesk2Toml }}"
+RUSTDESK_TOML="{{ overlay.config.configPaths.RustDeskToml }}"
+RUSTDESK_TOML2="{{ overlay.config.configPaths.RustDesk2Toml }}"
 DST="/home/${LIVE_USERNAME:-user}/.var/app/com.rustdesk.RustDesk/config/rustdesk"
 mkdir -p "$DST"
 
