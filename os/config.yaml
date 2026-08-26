@@ -15,6 +15,7 @@ overlays:
   Terminal: {}
   Display Manager: {}
   Text Editor: {}
+  Remote Desktop: {}
   Flatpaks:
     packages:
       - com.parsecgaming.parsec
