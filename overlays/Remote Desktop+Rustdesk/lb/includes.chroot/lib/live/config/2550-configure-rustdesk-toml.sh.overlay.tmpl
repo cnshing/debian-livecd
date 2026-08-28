@@ -10,7 +10,7 @@ if [ -z "$USER_HOME" ]; then
     exit 1
 fi
 
-CFG_DST="$USER_HOME/.var/app/com.rustdesk.RustDesk/config/rustdesk"
+CFG_DST="$USER_HOME/.config/rustdesk"
 
 mkdir -p "$CFG_DST"
 
@@ -28,4 +28,4 @@ else
     echo "rustdesk: no config found at $RUSTDESK_TOML2, skipping" >&2
 fi
 
-chown -R "$USERNAME:$USERNAME" "$USER_HOME/.var/app/com.rustdesk.RustDesk"
+chown -R "$USERNAME:$USERNAME" "$USER_HOME/.config/rustdesk"

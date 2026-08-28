@@ -1,0 +1,57 @@
+#!/bin/sh
+
+set -eu
+
+REPO="rustdesk/rustdesk"
+API_URL="https://api.github.com/repos/${REPO}/releases/tags/nightly"
+
+ARCH="{{ deb.config.arch | default(deb.arch) }}"
+case "$ARCH" in
+    amd64) ARCH="x86_64" ;;
+    arm64) ARCH="aarch64" ;;
+    armhf) ARCH="armv7" ;;
+    *)
+        echo "[RustDesk] ==> ERROR: Unsupported architecture: $ARCH" >&2
+        exit 1
+        ;;
+esac
+echo "[RustDesk] ==> Using architecture: $ARCH"
+
+echo "[RustDesk] ==> Fetching nightly release metadata..."
+JSON="$(curl -fsSL "$API_URL")"
+
+DOWNLOAD_URL="$(echo "$JSON" | jq -r --arg ARCH "$ARCH" '
+    .assets[]
+    | select(.name | contains("unattended-wayland") and contains($ARCH) and endswith(".deb"))
+    | .browser_download_url
+' | head -n1)" # TODO: Switch to latest stable release once unattended wayland feature is integrated
+
+if [ -z "$DOWNLOAD_URL" ] || [ "$DOWNLOAD_URL" = "null" ]; then
+    echo "[RustDesk] ==> ERROR: No matching unattended-wayland .deb found for architecture: $ARCH" >&2
+    exit 1
+fi
+echo "[RustDesk] ==> Found: $DOWNLOAD_URL"
+
+TMP_DEB="/tmp/rustdesk.deb"
+trap 'rm -f "$TMP_DEB"' EXIT
+
+echo "[RustDesk] ==> Downloading..."
+if ! curl -fL "$DOWNLOAD_URL" -o "$TMP_DEB"; then
+    echo "[RustDesk] ==> ERROR: Failed to download $DOWNLOAD_URL" >&2
+    exit 1
+fi
+
+echo "[RustDesk] ==> Installing..."
+apt-get update
+if ! apt-get install -y "$TMP_DEB"; then
+    echo "[RustDesk] ==> ERROR: Failed to install $TMP_DEB" >&2
+    exit 1
+fi
+
+echo "[RustDesk] ==> Enabling systemd service..."
+if ! systemctl enable rustdesk; then
+    echo "[RustDesk] ==> ERROR: Failed to enable rustdesk service" >&2
+    exit 1
+fi
+
+echo "[RustDesk] ==> Installed successfully"
