@@ -18,9 +18,8 @@ esac
 echo "[RustDesk] ==> Using architecture: $ARCH"
 
 echo "[RustDesk] ==> Fetching nightly release metadata..."
-JSON="$(curl -fsSL "$API_URL")"
 
-DOWNLOAD_URL="$(echo "$JSON" | jq -r --arg ARCH "$ARCH" '
+DOWNLOAD_URL="$(curl -fsSL "$API_URL" | jq -r --arg ARCH "$ARCH" '
     .assets[]
     | select(.name | contains("unattended-wayland") and contains($ARCH) and endswith(".deb"))
     | .browser_download_url
