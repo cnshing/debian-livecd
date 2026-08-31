@@ -76,6 +76,10 @@ There are some instances with GTK File Picker where it is hard coded such that o
 
 [comment - Make an explicit reference to the GNOME section in the future]: #
 
+## Flatpaks
+
+Any packages not conveniently available as an AppImage or Debian package may use Flatpaks as an alternative source.
+
 ## Networking
 
 [NetworkManager](https://networkmanager.dev/) is sufficient for Internet with ease of use and GNOME integration. 
@@ -98,7 +102,7 @@ The app should "just work", with no artificial barrier of access other than stan
 
 ### Rustdesk
 
-[Rustdesk](https://rustdesk.com/) should be automatically running on boot with a custom static password configuration and LAN direct IP access enabled. The configuration file itself should be located at the root directory of the liveCD medium. If this configuration is not available however, Rustdesk should then revert to it's default settings. 
+[Rustdesk](https://rustdesk.com/) should be able to on boot automatically run with a custom static password configuration and LAN direct IP access enabled. The configuration file itself should be located at the root directory of the liveCD medium. If this configuration is not available however, Rustdesk should then revert to it's default settings. 
 
 > [!WARNING]\
 > :warning: This process of automatically exposing unattended access to a network is essentially a backdoor. Do not attempt to set a known and public Rustdesk password!
