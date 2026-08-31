@@ -49,6 +49,18 @@ jobs:
               mv -v "$asset_dir/$filename" "$asset_dir/$release"
           done
 
+      - name: Split oversized ISO # 2GB Github release asset limit
+        run: |
+          limit=$((2*1024*1024*1024))
+          find "${{ steps.build-files.outputs.download-path }}" -iname '*.iso' -type f | while IFS= read -r iso; do
+            size=$(stat -c%s "$iso")
+            if (( size > limit )); then
+              echo "Splitting $iso ($size bytes) into sub-2GiB zip volumes"
+              zip -s 1900m -0 -j "$iso.zip" "$iso"
+              rm -v "$iso"
+            fi
+          done
+
       - name: Create the release
         uses: softprops/action-gh-release@v1
         with: 
