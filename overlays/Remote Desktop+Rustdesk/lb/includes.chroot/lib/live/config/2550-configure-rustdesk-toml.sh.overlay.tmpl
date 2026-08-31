@@ -1,0 +1,31 @@
+#!/bin/sh
+
+RUSTDESK_TOML="{{ overlay.config.configPaths.RustDeskToml }}"
+RUSTDESK_TOML2="{{ overlay.config.configPaths.RustDesk2Toml }}"
+USERNAME="${LIVE_USERNAME:-live}"
+USER_HOME="$(getent passwd "$USERNAME" 2>/dev/null | cut -d: -f6)"
+
+if [ -z "$USER_HOME" ]; then
+    echo "rustdesk: could not determine home directory to write configuration for user '$USERNAME'" >&2
+    exit 1
+fi
+
+CFG_DST="$USER_HOME/.config/rustdesk"
+
+mkdir -p "$CFG_DST"
+
+if [ -f "$RUSTDESK_TOML" ]; then
+    cp -f "$RUSTDESK_TOML" "$CFG_DST/RustDesk.toml"
+    chmod 600 "$CFG_DST/RustDesk.toml"
+else
+    echo "rustdesk: no config found at $RUSTDESK_TOML, skipping" >&2
+fi
+
+if [ -f "$RUSTDESK_TOML2" ]; then
+    cp -f "$RUSTDESK_TOML2" "$CFG_DST/RustDesk2.toml"
+    chmod 600 "$CFG_DST/RustDesk2.toml"
+else
+    echo "rustdesk: no config found at $RUSTDESK_TOML2, skipping" >&2
+fi
+
+chown -R "$USERNAME:$USERNAME" "$USER_HOME/.config/rustdesk"

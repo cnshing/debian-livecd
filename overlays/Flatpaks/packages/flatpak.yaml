@@ -1,0 +1,3 @@
+- flatpak
+- gnome-software-plugin-flatpak # Add Flatpak support for Gnome Software Store
+- xdg-desktop-portal

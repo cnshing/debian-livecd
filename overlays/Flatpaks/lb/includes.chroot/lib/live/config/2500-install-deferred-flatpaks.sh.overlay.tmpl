@@ -1,0 +1,27 @@
+#!/bin/sh
+# Deploy the flatpaks the 2500 chroot hook pulled but could not deploy.
+#
+# Deploying an extra-data ref runs its apply_extra script inside bwrap, and bwrap
+# cannot run in a chroot (no user namespaces, "/" is not a mount point). The hook
+# pulled the full closure -- extra-data payloads included, they live in the
+# commit's detached metadata -- and deployed only what it could. A ref in the
+# mirror with no deployment is exactly one of those leftovers, so everything
+# needed is already on disk and nothing here may pull.
+set -eu
+
+PKGS="{{ overlay.config.packages | join(' ') }}"
+[ -n "${PKGS}" ] || exit 0
+
+# Only app/ and runtime/ are installable refs; appstream2/x86_64 would fail id
+# validation.
+PENDING=""
+cd /var/lib/flatpak/repo/refs/remotes/flathub
+for ref in $(find app runtime -type f 2>/dev/null | sort); do
+    [ -e "/var/lib/flatpak/${ref}/active" ] || PENDING="${PENDING} ${ref}"
+done
+cd /
+
+[ -n "${PENDING}" ] || exit 0
+
+# One invocation so the transaction orders runtimes before their extensions.
+flatpak --system install --no-pull -y --noninteractive flathub ${PENDING}

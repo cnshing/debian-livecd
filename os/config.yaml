@@ -15,3 +15,11 @@ overlays:
   Terminal: {}
   Display Manager: {}
   Text Editor: {}
+  Remote Desktop: {}
+  Flatpaks:
+    packages:
+      - com.parsecgaming.parsec
+  Remote Desktop+Rustdesk:
+    configPaths:
+      RustDeskToml: /run/live/medium/RustDesk.toml # Configure RustDesk at the live medium directory
+      RustDesk2Toml: /run/live/medium/RustDesk2.toml

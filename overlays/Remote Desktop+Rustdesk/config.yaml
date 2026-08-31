@@ -1,0 +1,3 @@
+configPaths:
+  RustDeskToml: /run/live/medium/RustDesk.toml
+  RustDesk2Toml: /run/live/medium/RustDesk2.toml

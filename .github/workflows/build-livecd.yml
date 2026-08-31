@@ -36,7 +36,7 @@ jobs:
           ref: ${{ inputs.commitish }}
 
       - name: Generate Debian Image
-        uses: cnshing/build-linux-factory@v1 
+        uses: cnshing/build-linux-factory@main
         id: generate-image
 
       - name: Assign Artifact filename
