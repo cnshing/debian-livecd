@@ -24,3 +24,4 @@ overlays:
       RustDeskToml: /run/live/medium/RustDesk.toml # Configure RustDesk at the live medium directory
       RustDesk2Toml: /run/live/medium/RustDesk2.toml
   Browser: {}
+  Browser+Ad blocking: {}
