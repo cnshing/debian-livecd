@@ -1,0 +1,16 @@
+#!/bin/sh
+
+set -eu
+
+ID="78272b6fa58f4a1abaac99321d503a20@proton.me"
+URL="https://addons.mozilla.org/firefox/downloads/latest/proton-pass/latest.xpi"
+DEST_DIR="/usr/share/mozilla/extensions/{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
+
+echo "[Proton Pass Firefox] ==> Downloading extension..."
+mkdir -p "$DEST_DIR"
+if ! curl -fL "$URL" -o "$DEST_DIR/$ID.xpi"; then
+    echo "[Proton Pass Firefox] ==> ERROR: Failed to download $URL" >&2
+    exit 1
+fi
+
+echo "[Proton Pass Firefox] ==> Installed successfully"
