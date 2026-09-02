@@ -25,3 +25,4 @@ overlays:
       RustDesk2Toml: /run/live/medium/RustDesk2.toml
   Browser: {}
   Browser+Ad blocking: {}
+  Browser+Password Management: {}
