@@ -1,0 +1,36 @@
+#!/bin/sh
+
+set -eu
+
+ID="ghmbeldphafepmbegfdlkpapadhbakde"
+URL="https://clients2.google.com/service/update2/crx?response=redirect&prodversion=120.0&acceptformat=crx2,crx3&x=id%3D${ID}%26installsource%3Dondemand%26uc"
+TMP_CRX="/tmp/$ID.crx"
+trap 'rm -f "$TMP_CRX"' EXIT
+
+echo "[Proton Pass] ==> Downloading extension..."
+if ! curl -fL "$URL" -o "$TMP_CRX"; then
+    echo "[Proton Pass] ==> ERROR: Failed to download $URL" >&2
+    exit 1
+fi
+
+VERSION="$(unzip -p "$TMP_CRX" manifest.json | grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' | head -n1 | sed -E 's/.*"([^"]+)"$/\1/')"
+if [ -z "$VERSION" ]; then
+    echo "[Proton Pass] ==> ERROR: Failed to read version from downloaded crx" >&2
+    exit 1
+fi
+
+for DEST_DIR in /opt/google/chrome/extensions /usr/share/chromium/extensions; do
+    mkdir -p "$DEST_DIR"
+    chmod 755 "$DEST_DIR"
+    cp "$TMP_CRX" "$DEST_DIR/$ID.crx"
+    chmod 644 "$DEST_DIR/$ID.crx"
+    cat > "$DEST_DIR/$ID.json" <<EOF
+{
+  "external_crx": "$DEST_DIR/$ID.crx",
+  "external_version": "$VERSION"
+}
+EOF
+    chmod 644 "$DEST_DIR/$ID.json"
+done
+
+echo "[Proton Pass] ==> Installed successfully to Chrome and Chromium ($VERSION)"
