@@ -1,0 +1,16 @@
+#!/bin/sh
+
+set -eu
+
+. /live-build/config/hooks/normal/scripts/install-firefox-extensions.sh
+. /live-build/config/hooks/normal/scripts/install-chrome-extensions.sh
+
+{% for ext in overlay.config.extensions.firefox %}
+install_firefox_xpi "{{ ext.id }}" "{{ ext.name | default(ext.id) }}"
+{% endfor %}
+{% for ext in overlay.config.extensions['google-chrome'] %}
+install_crx "{{ ext.id }}" "{{ ext.name | default(ext.id) }}" "/opt/google/chrome/extensions"
+{% endfor %}
+{% for ext in overlay.config.extensions.chromium %}
+install_crx "{{ ext.id }}" "{{ ext.name | default(ext.id) }}" "/usr/share/chromium/extensions"
+{% endfor %}
