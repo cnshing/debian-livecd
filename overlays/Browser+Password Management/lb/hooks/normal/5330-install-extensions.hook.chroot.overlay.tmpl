@@ -11,6 +11,6 @@ install_firefox_xpi "{{ ext.id }}" "{{ ext.name | default(ext.id) }}"
 {% for ext in overlay.config.extensions['google-chrome'] %}
 install_crx "{{ ext.id }}" "{{ ext.name | default(ext.id) }}" "/opt/google/chrome/extensions"
 {% endfor %}
-{% for ext in overlay.config.extensions.chromium %}
+{% for ext in overlay.config.extensions['ungoogled-chromium'] %}
 install_crx "{{ ext.id }}" "{{ ext.name | default(ext.id) }}" "/usr/share/chromium/extensions"
 {% endfor %}

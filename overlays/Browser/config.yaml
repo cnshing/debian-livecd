@@ -1,6 +1,6 @@
 extensions:
   firefox: []
   google-chrome: []
-  chromium: []
-chromium:
+  ungoogled-chromium: []
+ungoogled-chromium:
   installWebStore: false

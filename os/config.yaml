@@ -24,7 +24,7 @@ overlays:
       RustDeskToml: /run/live/medium/RustDesk.toml # Configure RustDesk at the live medium directory
       RustDesk2Toml: /run/live/medium/RustDesk2.toml
   Browser:
-    chromium:
+    ungoogled-chromium:
       installWebStore: true
   Browser+Ad blocking:
     extensions:
@@ -43,7 +43,7 @@ overlays:
           name: Bitwarden
         - id: ghmbeldphafepmbegfdlkpapadhbakde
           name: Proton Pass
-      chromium:
+      ungoogled-chromium:
         - id: nngceckbapebfimnlniiiahkandclblb
           name: Bitwarden
         - id: ghmbeldphafepmbegfdlkpapadhbakde

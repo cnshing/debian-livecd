@@ -1,5 +1,5 @@
 #!/bin/sh
-{% if overlay.config.chromium.installWebStore %}
+{% if overlay.config['ungoogled-chromium'].installWebStore %}
 set -eu
 
 . /live-build/config/hooks/normal/scripts/install-chrome-extensions.sh
