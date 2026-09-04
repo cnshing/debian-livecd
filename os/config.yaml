@@ -24,7 +24,11 @@ overlays:
       RustDeskToml: /run/live/medium/RustDesk.toml # Configure RustDesk at the live medium directory
       RustDesk2Toml: /run/live/medium/RustDesk2.toml
   Browser: {}
-  Browser+Ad blocking: {}
+  Browser+Ad blocking:
+    extensions:
+      google-chrome:
+        - id: ddkjiahejlhfcafbddmgiahcphecmpfh
+          name: uBlock Origin Lite
   Browser+Password Management:
     extensions:
       firefox:

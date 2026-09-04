@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -eu
+
+. /live-build/config/hooks/normal/scripts/install-chrome-extensions.sh
+
+{% for ext in overlay.config.extensions['google-chrome'] %}
+install_crx "{{ ext.id }}" "{{ ext.name | default(ext.id) }}" "/opt/google/chrome/extensions"
+{% endfor %}
