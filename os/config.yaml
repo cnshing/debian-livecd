@@ -23,7 +23,9 @@ overlays:
     configPaths:
       RustDeskToml: /run/live/medium/RustDesk.toml # Configure RustDesk at the live medium directory
       RustDesk2Toml: /run/live/medium/RustDesk2.toml
-  Browser: {}
+  Browser:
+    chromium:
+      installWebStore: true
   Browser+Ad blocking:
     extensions:
       google-chrome:

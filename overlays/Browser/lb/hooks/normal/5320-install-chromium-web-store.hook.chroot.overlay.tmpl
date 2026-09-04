@@ -1,0 +1,26 @@
+#!/bin/sh
+{% if overlay.config.chromium.installWebStore %}
+set -eu
+
+. /live-build/config/hooks/normal/scripts/install-chrome-extensions.sh
+
+REPO="NeverDecaf/chromium-web-store"
+API_URL="https://api.github.com/repos/${REPO}/releases/latest"
+EXT_ID="ocaahdebbfolfmndjeplogmgcagdmblk" # Manual ID from the extension's signing key
+
+echo "[Chromium Web Store] ==> Fetching latest release metadata..."
+
+DOWNLOAD_URL="$(curl -fsSL "$API_URL" | jq -r '
+    .assets[]
+    | select(.name | endswith(".crx"))
+    | .browser_download_url
+' | head -n1)"
+
+if [ -z "$DOWNLOAD_URL" ] || [ "$DOWNLOAD_URL" = "null" ]; then
+    echo "[Chromium Web Store] ==> ERROR: No .crx asset found in latest release" >&2
+    exit 1
+fi
+echo "[Chromium Web Store] ==> Found: $DOWNLOAD_URL"
+
+install_crx_from_url "$DOWNLOAD_URL" "$EXT_ID" "Chromium Web Store" "/usr/share/chromium/extensions"
+{% endif %}

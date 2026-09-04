@@ -2,3 +2,5 @@ extensions:
   firefox: []
   google-chrome: []
   chromium: []
+chromium:
+  installWebStore: false

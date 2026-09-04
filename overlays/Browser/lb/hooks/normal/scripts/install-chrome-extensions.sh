@@ -7,6 +7,15 @@ install_crx() {
     name="$2"
     dest_dir="$3"
     url="https://clients2.google.com/service/update2/crx?response=redirect&prodversion=120.0&acceptformat=crx2,crx3&x=id%3D${id}%26installsource%3Dondemand%26uc"
+    install_crx_from_url "$url" "$id" "$name" "$dest_dir"
+}
+
+# Installs a .crx from an arbitrary CRX URL fetch
+install_crx_from_url() {
+    url="$1"
+    id="$2"
+    name="$3"
+    dest_dir="$4"
     tmp_crx="/tmp/$id.crx"
 
     echo "[$name] ==> Downloading extension..."
