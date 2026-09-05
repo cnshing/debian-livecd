@@ -1,5 +1,10 @@
 - name: ungoogled-chromium
-  repo: "deb https://mxrepo.com/mx/repo/ trixie main"
+  # Additional backup mirrors from https://github.com/MX-Linux/mx-repo-list/blob/master/repos.txt
+  repo: |
+    deb https://mxrepo.com/mx/repo/ trixie main
+    deb http://la.mxrepo.com/mx/repo/ trixie main
+    deb http://nl.mxrepo.com/mx/repo/ trixie main
+    deb http://it.mxrepo.com/mx/repo/ trixie main
   binary: true
   live: true
   installed: true
