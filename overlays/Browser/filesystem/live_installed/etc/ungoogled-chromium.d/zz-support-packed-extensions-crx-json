@@ -1,0 +1,26 @@
+#!/bin/sh
+# Fixes "Manifest file is missing or unreadable" errors in MX Linux's ungoogled-chromium
+# The extensions file uses `ls -dm` on /usr/share/chromium/extensions, which
+# includes both files and directories,  and the extension's <id>.json and <id>.crx files are stored.
+# As a result, those files are passed to --load-extension as if they were
+# unpacked extension directories, causing "Manifest file is missing or unreadable"
+# errors.
+#
+# This restores the intended distinction:
+#   directories -> passed to --load-extension
+#   files       -> left for Chromium's external-extension provider
+#
+# The filename for this script must sort AFTER "extensions". Files in
+# /etc/ungoogled-chromium.d/ are sourced in alphabetical order, and each one
+# appends to $CHROMIUM_FLAGS. Using a numeric prefix would make this file run
+# before "extensions", so the fix would have no effect.
+
+CHROMIUM_FLAGS=$(printf '%s' "$CHROMIUM_FLAGS" \
+  | sed -e 's#--load-extension=[^ ]*##g' \
+        -e 's#/usr/share/chromium/extensions/[^ ]*##g')
+
+_d=$(find /usr/share/chromium/extensions -mindepth 1 -maxdepth 1 -type d 2>/dev/null | paste -sd, -)
+[ -n "$_d" ] && CHROMIUM_FLAGS="$CHROMIUM_FLAGS --load-extension=$_d"
+unset _d
+
+export CHROMIUM_FLAGS
