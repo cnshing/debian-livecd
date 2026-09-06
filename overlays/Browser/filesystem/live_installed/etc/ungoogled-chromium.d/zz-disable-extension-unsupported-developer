@@ -1,0 +1,6 @@
+#!/bin/sh
+# Prevents unpacked/developer extensions from being disabled, without resorting to enabling developer mode.
+# ExtensionManagement::IsAllowedByUnpackedDeveloperModePolicy() short-circuits on this feature flag before checking the developer_mode pref, so unpacked extensions stay allowed while the pref (and the dev UI it exposes) stays off.
+
+CHROMIUM_FLAGS="$CHROMIUM_FLAGS --disable-features=ExtensionDisableUnsupportedDeveloper"
+export CHROMIUM_FLAGS
