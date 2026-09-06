@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# Required by the Chromium Web Store extension on ungoogled-chromium.
+
+# Equivalent to setting chrome://flags/#extension-mime-request-handling to
+# "Always prompt for install". \
+
+# SECURITY: this permits CRX install prompts from any origin, not only the Chrome Web Store — it removes the off-store install restriction entirely rather than allowlisting a single origin. 
+
+{% if overlay.config['ungoogled-chromium'].installWebStore %}
+export CHROMIUM_FLAGS="$CHROMIUM_FLAGS --extension-mime-request-handling=always-prompt-for-install"
+{% else %}
+# Disabled: installWebStore is false in overlays/Browser/config.yaml
+# export CHROMIUM_FLAGS="$CHROMIUM_FLAGS --extension-mime-request-handling=always-prompt-for-install"
+{% endif %}
