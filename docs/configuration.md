@@ -30,7 +30,7 @@ Both [Bitwarden](https://bitwarden.com/) and [Proton Pass](https://proton.me/pas
 
 ### Ad blocking
 
-[UBlock Origin](https://ublockorigin.com/) will be installed by default for ad blocking.
+[UBlock Origin](https://ublockorigin.com/) will be installed by default for ad blocking. UBlock Origin Lite may be alternatively installed for browsers without Manifest V2 support. 
 
 ## Display Manager
 
