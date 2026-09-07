@@ -3,7 +3,7 @@
 # Assumes dest_dir corresponds to the browser: /opt/google/chrome/extensions or /usr/share/chromium/extensions
 
 
-# Ensures .crx versioning succeeds the minimium of `google-chrome-stable` and `ungoogled-chromium` for compatability.
+# Ensures .crx versioning succeeds the minimum of `google-chrome-stable` and `ungoogled-chromium` for compatibility.
 chrome_prodversion() {
     prodversion=""
     for pkg in google-chrome-stable ungoogled-chromium; do
