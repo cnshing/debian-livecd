@@ -20,10 +20,11 @@ echo "[RustDesk] ==> Using architecture: $ARCH"
 echo "[RustDesk] ==> Fetching nightly release metadata..."
 
 DOWNLOAD_URL="$(curl -fsSL "$API_URL" | jq -r --arg ARCH "$ARCH" '
-    .assets[]
-    | select(.name | contains("unattended-wayland") and contains($ARCH) and endswith(".deb"))
+    [.assets[] | select(.name | contains("unattended-wayland") and contains($ARCH) and endswith(".deb"))]
+    | sort_by(.created_at)
+    | last
     | .browser_download_url
-' | head -n1)" # TODO: Switch to latest stable release once unattended wayland feature is integrated
+')" # TODO: Switch to latest stable release once unattended wayland feature is integrated
 
 if [ -z "$DOWNLOAD_URL" ] || [ "$DOWNLOAD_URL" = "null" ]; then
     echo "[RustDesk] ==> ERROR: No matching unattended-wayland .deb found for architecture: $ARCH" >&2

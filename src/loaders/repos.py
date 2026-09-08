@@ -130,10 +130,11 @@ class ReposLoader:
         """
         Retrieves all the apt pinning files, located in the `repos` folder for any overlay.
         """
-        return [pin 
+        return [pin
+                for pref in ("*.pref", "*.pref.chroot")
                 for pin in glob.glob(
                     os.path.join(
-                        self.deb.paths["os"], "repos/**/*.pref{,.chroot}"
+                        self.deb.paths["os"], "repos/**", pref
                     ),
                     recursive=True,
                     include_hidden=True,

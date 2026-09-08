@@ -1,0 +1,9 @@
+# Block everything from MX repository by default
+Package: *
+Pin: release o="MX repository"
+Pin-Priority: -1
+
+# Allow ungoogled-chromium from MX's repository
+Package: ungoogled-chromium
+Pin: release o="MX repository"
+Pin-Priority: 100

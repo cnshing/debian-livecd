@@ -1,0 +1,4 @@
+- google-chrome-stable
+- firefox-esr
+- ungoogled-chromium
+- jq # For parsing Firefox .xpi manifest

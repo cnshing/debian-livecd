@@ -23,3 +23,28 @@ overlays:
     configPaths:
       RustDeskToml: /run/live/medium/RustDesk.toml # Configure RustDesk at the live medium directory
       RustDesk2Toml: /run/live/medium/RustDesk2.toml
+  Browser:
+    ungoogled-chromium:
+      installWebStore: true
+  Browser+Ad blocking:
+    extensions:
+      google-chrome:
+        - id: ddkjiahejlhfcafbddmgiahcphecmpfh
+          name: uBlock Origin Lite
+  Browser+Password Management:
+    extensions:
+      firefox:
+        - id: "{446900e4-71c2-419f-a6a7-df9c091e268b}"
+          name: Bitwarden
+        - id: "78272b6fa58f4a1abaac99321d503a20@proton.me"
+          name: Proton Pass
+      google-chrome:
+        - id: nngceckbapebfimnlniiiahkandclblb
+          name: Bitwarden
+        - id: ghmbeldphafepmbegfdlkpapadhbakde
+          name: Proton Pass
+      ungoogled-chromium:
+        - id: nngceckbapebfimnlniiiahkandclblb
+          name: Bitwarden
+        - id: ghmbeldphafepmbegfdlkpapadhbakde
+          name: Proton Pass
