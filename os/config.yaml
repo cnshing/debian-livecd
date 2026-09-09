@@ -17,6 +17,13 @@ overlays:
   Text Editor: {}
   Video Player: {}
   Audio Effects: {}
+  Battery Management:
+    performance:
+      start: 60
+      end: 100
+    powersave:
+      start: 0
+      end: 40
   Remote Desktop: {}
   Flatpaks:
     packages:
