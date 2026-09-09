@@ -15,6 +15,13 @@ overlays:
   Terminal: {}
   Display Manager: {}
   Text Editor: {}
+  Battery Management:
+    performance:
+      start: 60
+      end: 100
+    powersave:
+      start: 0
+      end: 40
   Remote Desktop: {}
   Flatpaks:
     packages:
