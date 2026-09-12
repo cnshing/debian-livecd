@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -eu
+
+echo "[Battery Management] ==> Enabling battery-power-mode service..."
+if ! systemctl enable battery-power-mode.service; then
+    echo "[Battery Management] ==> ERROR: Failed to enable battery-power-mode service" >&2
+    exit 1
+fi
+
+echo "[Battery Management] ==> Enabled successfully"
