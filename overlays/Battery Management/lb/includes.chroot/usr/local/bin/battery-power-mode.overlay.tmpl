@@ -1,0 +1,93 @@
+#!/bin/sh
+
+set -eu
+
+BAT_DEVICE="/org/freedesktop/UPower/devices/DisplayDevice"
+CURRENT=""
+PROFILES=""
+
+# Defer to tlp.conf is scaling_governor is configured by exiting.
+for f in /etc/tlp.conf /etc/tlp.d/*.conf; do
+    [ -f "$f" ] || continue
+    if grep -qE '^[[:space:]]*CPU_SCALING_GOVERNOR_ON_(AC|BAT)[[:space:]]*=[[:space:]]*[^[:space:]]' "$f"; then
+        echo "battery-power-mode: TLP manages scaling_governor via $f, deferring to it" >&2
+        exit 0
+    fi
+done
+
+governor_available() {
+    want="$1"
+    for gov in $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors 2>/dev/null); do
+        if [ "$gov" = "$want" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+set_governor() {
+    for gov in /sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_governor; do
+        [ -w "$gov" ] && echo "$1" > "$gov" 2>/dev/null || true
+    done
+}
+
+apply() {
+    pct="$1"
+    case "$pct" in ''|*[!0-9]*) return ;; esac
+    for p in $PROFILES; do
+        start=${p%%,*}
+        rest=${p#*,}
+        end=${rest%%,*}
+        gov=${rest#*,}
+        if [ "$pct" -ge "$start" ] && [ "$pct" -le "$end" ] && [ "$CURRENT" != "$gov" ]; then
+            set_governor "$gov"
+            CURRENT="$gov"
+            return
+        fi
+    done
+}
+
+
+# Loads the battery profiles, only if the configuration defines them as non-empty values.
+# Governor defaults to the profile's own key name (e.g. "performance") unless overridden.
+{% for name, profile in overlay.config.items() %}
+{%- set gov = profile.governor if (profile.governor is defined and profile.governor != '') else name %}
+{%- if profile.start is defined and profile.start != '' and profile.end is defined and profile.end != '' %}
+if governor_available "{{ gov }}"; then
+    PROFILES="$PROFILES {{ profile.start }},{{ profile.end }},{{ gov }}"
+else
+    echo "battery-power-mode: governor '{{ gov }}' unavailable, skipping profile '{{ name }}'" >&2
+fi
+{%- else %}
+echo "battery-power-mode: profile '{{ name }}' missing start/end, skipping" >&2
+{%- endif %}
+{% endfor %}
+
+if [ -z "$PROFILES" ]; then
+    echo "battery-power-mode: no usable profiles configured, exiting" >&2
+    exit 0
+fi
+
+if ! upower -i "$BAT_DEVICE" 2>/dev/null | grep -qE '^[[:space:]]*power supply:[[:space:]]*yes'; then
+    echo "battery-power-mode: no battery present, exiting" >&2
+    exit 0
+fi
+
+apply "$(upower -i "$BAT_DEVICE" | awk -F: '/percentage/ {gsub(/[ %]/,"",$2); print $2}')"
+
+IN_TARGET=0
+upower --monitor-detail | while IFS= read -r line; do
+    case "$line" in
+        *"/org/freedesktop/UPower/devices/"*)
+            case "$line" in
+                *"$BAT_DEVICE"*) IN_TARGET=1 ;;
+                *) IN_TARGET=0 ;;
+            esac
+            ;;
+        *percentage:*)
+            if [ "$IN_TARGET" = "1" ]; then
+                apply "$(echo "$line" | awk -F: '{gsub(/[ %]/,"",$2); print $2}')"
+            fi
+            ;;
+    esac
+done

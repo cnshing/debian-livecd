@@ -1,0 +1,12 @@
+[Unit]
+Description=Switch CPU governor by battery percentage (UPower monitor)
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/battery-power-mode
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
