@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1.0/policyconfig.dtd">
+<policyconfig>
+  <vendor>debian-livecd</vendor>
+
+  <action id="debian.livecd.set-primary-gpu">
+    <description>Select the primary GPU for the graphical session</description>
+    <message>Authentication is required to select the primary GPU</message>
+  <!-- Allow local sessions without authentication. The helper is invoked
+      during GDM session startup, before logind necessarily marks the new
+      session active, so both active and inactive local sessions must be
+      permitted. Arbitrary/non-local callers are not allowed. -->
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>yes</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/local/bin/set-primary-gpu</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">false</annotate>
+  </action>
+</policyconfig>
