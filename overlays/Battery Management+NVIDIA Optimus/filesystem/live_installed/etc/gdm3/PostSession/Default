@@ -1,0 +1,7 @@
+#!/bin/sh
+# GDM runs this as root when a session ends (gdm daemon/gdm-session-worker.c:1846).
+# Resets the primary gpu back to default on any session end for a clean state.
+
+/usr/local/bin/set-primary-gpu default || true
+
+exit 0
