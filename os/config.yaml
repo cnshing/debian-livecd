@@ -35,6 +35,7 @@ overlays:
     powersave:
       start: 0
       end: 40
+  Battery Management+NVIDIA Optimus: {}
   Remote Desktop: {}
   Remote Desktop+Parsec: {}
   Miscellaneous+Load to RAM: {}
