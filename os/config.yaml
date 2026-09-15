@@ -16,12 +16,13 @@ overlays:
   Display Manager: {}
   Text Editor: {}
   Battery Management:
-    performance:
-      start: 60
-      end: 100
-    powersave:
-      start: 0
-      end: 40
+    profiles:
+      performance:
+        start: 60
+        end: 100
+      powersave:
+        start: 0
+        end: 40
   Battery Management+NVIDIA Optimus: {}
   Remote Desktop: {}
   Flatpaks:
