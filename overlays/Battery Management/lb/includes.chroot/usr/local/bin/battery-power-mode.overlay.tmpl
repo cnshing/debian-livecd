@@ -41,6 +41,7 @@ apply() {
         gov=${rest#*,}
         if [ "$pct" -ge "$start" ] && [ "$pct" -le "$end" ] && [ "$CURRENT" != "$gov" ]; then
             set_governor "$gov"
+            echo "battery-power-mode: ${pct}% -> $gov" >&2
             CURRENT="$gov"
             return
         fi
