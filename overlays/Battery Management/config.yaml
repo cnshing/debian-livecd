@@ -1,6 +1,7 @@
-performance:
-  start: ""
-  end: ""
-powersave:
-  start: ""
-  end: ""
+profiles:
+  performance:
+    start: ""
+    end: ""
+  powersave:
+    start: ""
+    end: ""

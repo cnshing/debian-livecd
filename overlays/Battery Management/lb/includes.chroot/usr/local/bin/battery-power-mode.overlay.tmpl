@@ -50,7 +50,7 @@ apply() {
 
 # Loads the battery profiles, only if the configuration defines them as non-empty values.
 # Governor defaults to the profile's own key name (e.g. "performance") unless overridden.
-{% for name, profile in overlay.config.items() %}
+{% for name, profile in overlay.config.profiles.items() %}
 {%- set gov = profile.governor if (profile.governor is defined and profile.governor != '') else name %}
 {%- if profile.start is defined and profile.start != '' and profile.end is defined and profile.end != '' %}
 if governor_available "{{ gov }}"; then
