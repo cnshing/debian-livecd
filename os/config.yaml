@@ -16,6 +16,7 @@ overlays:
   Display Manager: {}
   Text Editor: {}
   Battery Management:
+    charging: performance
     profiles:
       performance:
         start: 60
