@@ -77,19 +77,9 @@ fi
 
 apply "$(upower -i "$BAT_DEVICE" | awk -F: '/percentage/ {gsub(/[ %]/,"",$2); print $2}')"
 
-IN_TARGET=0
-upower --monitor-detail | while IFS= read -r line; do
-    case "$line" in
-        *"/org/freedesktop/UPower/devices/"*)
-            case "$line" in
-                *"$BAT_DEVICE"*) IN_TARGET=1 ;;
-                *) IN_TARGET=0 ;;
-            esac
-            ;;
-        *percentage:*)
-            if [ "$IN_TARGET" = "1" ]; then
-                apply "$(echo "$line" | awk -F: '{gsub(/[ %]/,"",$2); print $2}')"
-            fi
-            ;;
-    esac
+busctl monitor --system --json=short \
+    --match="type=signal,sender=org.freedesktop.UPower,path=$BAT_DEVICE,interface=org.freedesktop.DBus.Properties,member=PropertiesChanged" |
+jq --unbuffered -r '.payload.data[1].Percentage.data // empty | floor' |
+while IFS= read -r pct; do
+    apply "$pct"
 done
