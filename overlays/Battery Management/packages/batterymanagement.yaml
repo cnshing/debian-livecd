@@ -1,0 +1,3 @@
+- tlp
+- upower
+- jq # required to parse busctl
