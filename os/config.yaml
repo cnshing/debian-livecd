@@ -29,6 +29,7 @@ overlays:
   Video Player: {}
   Audio Effects: {}
   Battery Management:
+    charging: performance
     profiles:
       performance:
         start: 60

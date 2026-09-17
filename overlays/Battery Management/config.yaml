@@ -5,3 +5,4 @@ profiles:
   powersave:
     start: ""
     end: ""
+charging: "" # override profiles and use this governor when charging

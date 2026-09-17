@@ -5,6 +5,7 @@ set -eu
 BAT_DEVICE="/org/freedesktop/UPower/devices/DisplayDevice"
 CURRENT=""
 PROFILES=""
+CHARGING=""
 
 # Defer to tlp.conf is scaling_governor is configured by exiting.
 for f in /etc/tlp.conf /etc/tlp.d/*.conf; do
@@ -34,21 +35,33 @@ set_governor() {
 
 apply() {
     pct="$1"
-    case "$pct" in ''|*[!0-9]*) return ;; esac
-    for p in $PROFILES; do
-        start=${p%%,*}
-        rest=${p#*,}
-        end=${rest%%,*}
-        gov=${rest#*,}
-        if [ "$pct" -ge "$start" ] && [ "$pct" -le "$end" ] && [ "$CURRENT" != "$gov" ]; then
-            set_governor "$gov"
-            echo "battery-power-mode: ${pct}% -> $gov" >&2
-            CURRENT="$gov"
-            return
-        fi
-    done
+    state="$2"
+    target=""
+    reason="${pct}%"
+    # UPower Device.State: 1 charging, 4 fully charged, 5 pending charge (e.g. held
+    # by a charge threshold) all mean plugged in.
+    case "$state" in
+        1|4|5) target="$CHARGING"; reason="${pct}% charging" ;;
+    esac
+    if [ -z "$target" ]; then
+        case "$pct" in ''|*[!0-9]*) return ;; esac
+        for p in $PROFILES; do
+            start=${p%%,*}
+            rest=${p#*,}
+            end=${rest%%,*}
+            gov=${rest#*,}
+            if [ "$pct" -ge "$start" ] && [ "$pct" -le "$end" ]; then
+                target="$gov"
+                break
+            fi
+        done
+    fi
+    if [ -n "$target" ] && [ "$CURRENT" != "$target" ]; then
+        set_governor "$target"
+        echo "battery-power-mode: $reason -> $target" >&2
+        CURRENT="$target"
+    fi
 }
-
 
 # Loads the battery profiles, only if the configuration defines them as non-empty values.
 # Governor defaults to the profile's own key name (e.g. "performance") unless overridden.
@@ -65,7 +78,16 @@ echo "battery-power-mode: profile '{{ name }}' missing start/end, skipping" >&2
 {%- endif %}
 {% endfor %}
 
-if [ -z "$PROFILES" ]; then
+# Governor to use whenever plugged in, regardless of  battery percentage.
+{%- if overlay.config.charging is defined and overlay.config.charging != '' %}
+if governor_available "{{ overlay.config.charging }}"; then
+    CHARGING="{{ overlay.config.charging }}"
+else
+    echo "battery-power-mode: governor '{{ overlay.config.charging }}' unavailable, ignoring charging" >&2
+fi
+{%- endif %}
+
+if [ -z "$PROFILES" ] && [ -z "$CHARGING" ]; then
     echo "battery-power-mode: no usable profiles configured, exiting" >&2
     exit 0
 fi
@@ -75,11 +97,19 @@ if ! upower -i "$BAT_DEVICE" 2>/dev/null | grep -qE '^[[:space:]]*power supply:[
     exit 0
 fi
 
-apply "$(upower -i "$BAT_DEVICE" | awk -F: '/percentage/ {gsub(/[ %]/,"",$2); print $2}')"
+# plug/unplugs between this read and busctl subscribing is missed until the next State signal; start the monitor first and read inside the loop
+set -- $(busctl get-property org.freedesktop.UPower "$BAT_DEVICE" org.freedesktop.UPower.Device Percentage State)
+PCT=${2%%.*}
+STATE=${4:-}
+apply "$PCT" "$STATE"
+
 
 busctl monitor --system --json=short \
     --match="type=signal,sender=org.freedesktop.UPower,path=$BAT_DEVICE,interface=org.freedesktop.DBus.Properties,member=PropertiesChanged" |
-jq --unbuffered -r '.payload.data[1].Percentage.data // empty | floor' |
-while IFS= read -r pct; do
-    apply "$pct"
+jq --unbuffered -r '.payload.data[1] | select(has("Percentage") or has("State"))
+    | "\(.Percentage.data // "-" | if . == "-" then . else floor end) \(.State.data // "-")"' |
+while IFS=' ' read -r pct state; do
+    [ "$pct" = "-" ] || PCT="$pct"
+    [ "$state" = "-" ] || STATE="$state"
+    apply "$PCT" "$STATE"
 done
