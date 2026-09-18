@@ -16,6 +16,8 @@ Ideally, there should be an application that automatically applies an [AutoEQ](h
 
 [TLP](https://github.com/linrunner/TLP) will be used to optimize battery with performance. Preferentially, any laptop devices should use full computing power when charging and switch to power-saving mode within `0%` - `40%` battery thresholds.
 
+However, any power or battery settings manually changed by the user should take precedence for the session.
+
 ### NVIDIA Optimus
 
 If possible, the user should be able to explicitly choose screen rendering from a dedicated GPU, deciding which use-case is most appropriate for their battery and performance needs.
