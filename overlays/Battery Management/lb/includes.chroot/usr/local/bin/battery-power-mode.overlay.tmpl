@@ -3,91 +3,68 @@
 set -eu
 
 BAT_DEVICE="/org/freedesktop/UPower/devices/DisplayDevice"
-CURRENT=""
+PP="org.freedesktop.UPower.PowerProfiles"
+PP_PATH="/org/freedesktop/UPower/PowerProfiles"
+GSD_POWER="org.gnome.SettingsDaemon.Power"
 PROFILES=""
-CHARGING=""
 
-# Defer to tlp.conf is scaling_governor is configured by exiting.
-for f in /etc/tlp.conf /etc/tlp.d/*.conf; do
-    [ -f "$f" ] || continue
-    if grep -qE '^[[:space:]]*CPU_SCALING_GOVERNOR_ON_(AC|BAT)[[:space:]]*=[[:space:]]*[^[:space:]]' "$f"; then
-        echo "battery-power-mode: TLP manages scaling_governor via $f, deferring to it" >&2
-        exit 0
-    fi
-done
+# User overrides, kept until the service restarts:
+# PICKED - Defer to any manually set power mode in GNOME while on battery.
+# NO_SAVER - GNOME Settings Daemon held power-saver on low battery. When enabled, defer to this rather than our own configured values.
+PICKED=0
+NO_SAVER=0
+# "<caller> <cookie>" of the last Set/HoldProfile call; it only counts once tlp-pd accepts it,
+# since polkit rejects callers outside the active session.
+PENDING_PICK=""
+PENDING_HOLD=""
 
-governor_available() {
-    want="$1"
-    for gov in $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors 2>/dev/null); do
-        if [ "$gov" = "$want" ]; then
-            return 0
-        fi
-    done
+plugged_in() {
+    # UPower Device.State: 1 charging, 4 fully charged, 5 pending charge.
+    case "$STATE" in 1|4|5) return 0 ;; esac
     return 1
 }
 
-set_governor() {
-    # sh has no locals - do not reuse $gov
-    for sysfs_gov in /sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_governor; do
-        [ -w "$sysfs_gov" ] && echo "$1" > "$sysfs_gov" 2>/dev/null || true
-    done
-}
-
 apply() {
-    pct="$1"
-    state="$2"
-    target=""
-    reason="${pct}%"
-    # UPower Device.State: 1 charging, 4 fully charged, 5 pending charge (e.g. held
-    # by a charge threshold) all mean plugged in.
-    case "$state" in
-        1|4|5) target="$CHARGING"; reason="${pct}% charging" ;;
-    esac
-    if [ -z "$target" ]; then
-        case "$pct" in ''|*[!0-9]*) return ;; esac
-        for p in $PROFILES; do
-            start=${p%%,*}
-            rest=${p#*,}
-            end=${rest%%,*}
-            gov=${rest#*,}
-            if [ "$pct" -ge "$start" ] && [ "$pct" -le "$end" ]; then
-                target="$gov"
-                break
-            fi
-        done
-    fi
-    if [ -n "$target" ] && [ "$CURRENT" != "$target" ]; then
-        set_governor "$target"
-        echo "battery-power-mode: $reason -> $target" >&2
-        CURRENT="$target"
+    # Charging belongs to TLP (TLP_PROFILE_AC); only battery percentage is handled here.
+    plugged_in && return 0
+    [ "$PICKED" = 0 ] || return 0
+    case "$PCT" in ''|*[!0-9]*) return 0 ;; esac
+    want=""
+    for p in $PROFILES; do
+        start=${p%%,*}
+        rest=${p#*,}
+        end=${rest%%,*}
+        profile=${rest#*,}
+        [ "$NO_SAVER" = 1 ] && [ "$profile" = "power-saver" ] && continue
+        if [ "$PCT" -ge "$start" ] && [ "$PCT" -le "$end" ]; then
+            want="$profile"
+            break
+        fi
+    done
+    [ -n "$want" ] && [ "$want" != "$ACTIVE" ] || return 0
+    # Defer to any ProfileHold currently active
+    [ "$(busctl get-property "$PP" "$PP_PATH" "$PP" ActiveProfileHolds 2>/dev/null)" = "aa{sv} 0" ] || return 0
+    if tlp "$want" >/dev/null 2>&1; then
+        echo "battery-power-mode: ${PCT}% -> $want" >&2
+        ACTIVE="$want"
+    else
+        echo "battery-power-mode: 'tlp $want' failed" >&2
     fi
 }
 
 # Loads the battery profiles, only if the configuration defines them as non-empty values.
-# Governor defaults to the profile's own key name (e.g. "performance") unless overridden.
+# Profile names are TLP's: performance, balanced, power-saver.
 {% for name, profile in overlay.config.profiles.items() %}
-{%- set gov = profile.governor if (profile.governor is defined and profile.governor != '') else name %}
-{%- if profile.start is defined and profile.start != '' and profile.end is defined and profile.end != '' %}
-if governor_available "{{ gov }}"; then
-    PROFILES="$PROFILES {{ profile.start }},{{ profile.end }},{{ gov }}"
-else
-    echo "battery-power-mode: governor '{{ gov }}' unavailable, skipping profile '{{ name }}'" >&2
-fi
+{%- if name not in ['performance', 'balanced', 'power-saver'] %}
+echo "battery-power-mode: '{{ name }}' is not a TLP profile, skipping" >&2
+{%- elif profile.start is defined and profile.start != '' and profile.end is defined and profile.end != '' %}
+PROFILES="$PROFILES {{ profile.start }},{{ profile.end }},{{ name }}"
 {%- else %}
 echo "battery-power-mode: profile '{{ name }}' missing start/end, skipping" >&2
 {%- endif %}
 {% endfor %}
 
-# Governor to use whenever plugged in, regardless of  battery percentage.
-{%- if overlay.config.charging is defined and overlay.config.charging != '' %}
-if governor_available "{{ overlay.config.charging }}"; then
-    CHARGING="{{ overlay.config.charging }}"
-else
-    echo "battery-power-mode: governor '{{ overlay.config.charging }}' unavailable, ignoring charging" >&2
-fi
-{%- endif %}
-
-if [ -z "$PROFILES" ] && [ -z "$CHARGING" ]; then
+if [ -z "$PROFILES" ]; then
     echo "battery-power-mode: no usable profiles configured, exiting" >&2
     exit 0
 fi
@@ -101,15 +78,67 @@ fi
 set -- $(busctl get-property org.freedesktop.UPower "$BAT_DEVICE" org.freedesktop.UPower.Device Percentage State)
 PCT=${2%%.*}
 STATE=${4:-}
-apply "$PCT" "$STATE"
+# Reading ActiveProfile also makes tlp-pd emit PropertiesChanged on this interface: it only
+# signals interfaces a client has used.
+ACTIVE=$(busctl get-property "$PP" "$PP_PATH" "$PP" ActiveProfile 2>/dev/null | sed -n 's/^s "\(.*\)"$/\1/p')
+apply
 
-
+# Events, one per line:
+#   battery <percentage|-> <state|->  UPower DisplayDevice changed
+#   profile <name>                    tlp-pd's ActiveProfile changed (by TLP, a hold, or us)
+#   pick <caller> <cookie>            someone asked tlp-pd for a Power Mode (GNOME Settings/Shell)
+#   hold <caller> <cookie>            GNOME Settings Daemon asked to hold power-saver
+#   ok <caller> <cookie>              tlp-pd accepted that call
 busctl monitor --system --json=short \
-    --match="type=signal,sender=org.freedesktop.UPower,path=$BAT_DEVICE,interface=org.freedesktop.DBus.Properties,member=PropertiesChanged" |
-jq --unbuffered -r '.payload.data[1] | select(has("Percentage") or has("State"))
-    | "\(.Percentage.data // "-" | if . == "-" then . else floor end) \(.State.data // "-")"' |
-while IFS=' ' read -r pct state; do
-    [ "$pct" = "-" ] || PCT="$pct"
-    [ "$state" = "-" ] || STATE="$state"
-    apply "$PCT" "$STATE"
+    --match="type=signal,sender=org.freedesktop.UPower,path=$BAT_DEVICE,interface=org.freedesktop.DBus.Properties,member=PropertiesChanged" \
+    --match="type=signal,sender=$PP,path=$PP_PATH,interface=org.freedesktop.DBus.Properties,member=PropertiesChanged" \
+    --match="type=method_call,destination=$PP,path=$PP_PATH,interface=org.freedesktop.DBus.Properties,member=Set" \
+    --match="type=method_call,destination=$PP,path=$PP_PATH,interface=$PP,member=HoldProfile" \
+    --match="type=method_return,sender=$PP" |
+jq --unbuffered -r --arg bat "$BAT_DEVICE" --arg gsd "$GSD_POWER" '
+    if .type == "signal" and .path == $bat then
+        .payload.data[1] | select(has("Percentage") or has("State"))
+        | "battery \(.Percentage.data // "-" | if . == "-" then . else floor end) \(.State.data // "-")"
+    elif .type == "signal" then
+        .payload.data[1].ActiveProfile.data // empty
+        | select(. == "performance" or . == "balanced" or . == "power-saver") | "profile \(.)"
+    elif .member == "Set" then
+        select(.payload.data[1] == "ActiveProfile") | "pick \(.sender) \(.cookie)"
+    elif .member == "HoldProfile" then
+        select(.payload.data[0] == "power-saver" and .payload.data[2] == $gsd) | "hold \(.sender) \(.cookie)"
+    elif .type == "method_return" then
+        "ok \(.destination) \(.reply_cookie)"
+    else empty end' |
+while IFS=' ' read -r event a b; do
+    case "$event" in
+        battery)
+            [ "$a" = "-" ] || PCT="$a"
+            [ "$b" = "-" ] || STATE="$b"
+            apply
+            ;;
+        profile)
+            ACTIVE="$a"
+            # Re-apply after TLP's own switch on unplug or a released hold reverting it.
+            apply
+            ;;
+        pick) PENDING_PICK="$a $b" ;;
+        hold) PENDING_HOLD="$a $b" ;;
+        ok)
+            if [ "$a $b" = "$PENDING_PICK" ]; then
+                PENDING_PICK=""
+                if plugged_in; then
+                    echo "battery-power-mode: Power Mode picked in GNOME while charging; charging stays with TLP" >&2
+                elif [ "$PICKED" = 0 ]; then
+                    PICKED=1
+                    echo "battery-power-mode: Power Mode picked in GNOME, percentage profiles off until restart" >&2
+                fi
+            elif [ "$a $b" = "$PENDING_HOLD" ]; then
+                PENDING_HOLD=""
+                if [ "$NO_SAVER" = 0 ]; then
+                    NO_SAVER=1
+                    echo "battery-power-mode: GNOME holds power-saver on low battery, power-saver profiles off until restart" >&2
+                fi
+            fi
+            ;;
+    esac
 done

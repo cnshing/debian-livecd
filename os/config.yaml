@@ -21,7 +21,7 @@ overlays:
       performance:
         start: 60
         end: 100
-      powersave:
+      power-saver:
         start: 0
         end: 40
   Battery Management+NVIDIA Optimus: {}

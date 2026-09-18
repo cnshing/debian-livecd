@@ -1,6 +1,6 @@
 [Unit]
-Description=Switch CPU governor by battery percentage (UPower monitor)
-After=multi-user.target
+Description=Switch TLP profile by battery percentage (UPower monitor)
+After=multi-user.target tlp.service
 
 [Service]
 Type=simple
