@@ -1,5 +1,5 @@
 # tlp-pd (GNOME Power Mode backed by TLP) only exists in trixie-backports.
 # TODO: Remove this once forky is stable
 Package: tlp tlp-pd tlp-rdw
-Pin: release n=trixie-backports
-Pin-Priority: 500
+Pin: release l=Debian Backports
+Pin-Priority: 995
