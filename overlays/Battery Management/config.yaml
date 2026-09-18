@@ -1,8 +1,8 @@
-profiles:
+charging: "" # TLP profile while plugged in (performance, balanced, power-saver)
+profiles: # TLP profiles by battery percentage while on battery
   performance:
     start: ""
     end: ""
-  powersave:
+  power-saver:
     start: ""
     end: ""
-charging: "" # override profiles and use this governor when charging
