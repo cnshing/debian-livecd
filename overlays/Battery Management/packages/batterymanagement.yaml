@@ -1,3 +1,4 @@
 - tlp
+- tlp-pd # GNOME Power Mode switch
 - upower
 - jq # required to parse busctl
