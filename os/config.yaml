@@ -15,6 +15,16 @@ overlays:
   Terminal: {}
   Display Manager: {}
   Text Editor: {}
+  Battery Management:
+    charging: performance
+    profiles:
+      performance:
+        start: 41
+        end: 100
+      power-saver:
+        start: 0
+        end: 40
+  Battery Management+NVIDIA Optimus: {}
   Remote Desktop: {}
   Flatpaks:
     packages:
