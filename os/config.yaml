@@ -19,7 +19,7 @@ overlays:
     charging: performance
     profiles:
       performance:
-        start: 60
+        start: 41
         end: 100
       power-saver:
         start: 0
