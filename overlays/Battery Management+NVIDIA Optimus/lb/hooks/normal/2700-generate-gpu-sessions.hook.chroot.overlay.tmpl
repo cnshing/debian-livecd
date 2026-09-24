@@ -1,5 +1,5 @@
 #!/bin/sh
-# Generates Integrated and Dedicate GPU gnome session desktop files
+# Generates Integrated and Dedicated GPU gnome session desktop files
 # Exec needs the explicit sh -c because GDM never runs it through a shell: it is split with g_shell_parse_argv and spawned directly (gdm daemon/gdm-wayland-session.c:306). If pkexec cannot apply the policy, its error lands in the journal and the session still starts, on whichever GPU Mutter would have picked by itself.
 
 set -eu
