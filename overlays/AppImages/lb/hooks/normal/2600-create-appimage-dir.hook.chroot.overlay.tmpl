@@ -1,0 +1,6 @@
+#!/bin/sh
+# Creates appImageDir in /etc/skel, which user-setup copies into the live user's home at boot.
+set -eu
+
+DIR="{{ overlay.config.appImageDir }}"
+mkdir -p "/etc/skel/${DIR#/home/*/}"

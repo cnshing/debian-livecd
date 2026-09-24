@@ -1,0 +1,6 @@
+[AppImageLauncher]
+destination = {{ overlay.config.appImageDir }}
+
+# Configure same path as additional directories because the daemon turns a missing/empty one into its working directory
+[appimagelauncherd]
+additional_directories_to_watch = {{ overlay.config.appImageDir }}

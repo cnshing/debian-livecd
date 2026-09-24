@@ -1,0 +1,10 @@
+# Block MX's bullseye (MX-21) repository 
+# Do not add quotes to any value from key `Pin`.
+Package: *
+Pin: release o=MX repository,n=bullseye
+Pin-Priority: -1
+
+# Allow AppImageLauncher and
+Package: appimagelauncher libappimage0
+Pin: release o=MX repository,n=bullseye
+Pin-Priority: 100

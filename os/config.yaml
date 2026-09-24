@@ -19,6 +19,8 @@ overlays:
   Flatpaks:
     packages:
       - com.parsecgaming.parsec
+  AppImages:
+    appImageDir: /home/live/AppImages
   Remote Desktop+Rustdesk:
     configPaths:
       RustDeskToml: /run/live/medium/RustDesk.toml # Configure RustDesk at the live medium directory
