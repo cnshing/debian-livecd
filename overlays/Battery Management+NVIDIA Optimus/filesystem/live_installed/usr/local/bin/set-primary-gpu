@@ -1,10 +1,9 @@
-```sh
 #!/bin/sh
 # Override Mutter's primary gpu selection with 'dedicated' and 'integrated' gpus.
 
-# Mutter has its own method for selecting a GPU at compostitor startup. The script leverages a `mutter-device-preferred-primary` udev tag to override this selection. See udev tag in CURRENT_TAGS; see meta-udev.c:125, meta-backend-native.c:536, and meta-renderer-native.c:2346.
+# Mutter has its own method for selecting a GPU at compositor startup. The script leverages a `mutter-device-preferred-primary` udev tag to override this selection. See udev tag in CURRENT_TAGS; see meta-udev.c:125, meta-backend-native.c:536, and meta-renderer-native.c:2346.
 
-# We select the first "dedicated" and non-dedicated("integrated") device in switcheroo-control's libudeb enumeration order, where it is considered "dedicated" if the DRM render nodes are assigned a "switcheroo-discrete-gpu" tag. It uses this inforamtion along with others to properly match this render node to a "card" node used by the `mutter-device-preferred-primary` udev tag.
+# We select the first "dedicated" and non-dedicated("integrated") device in switcheroo-control's libudev enumeration order, where it is considered "dedicated" if the DRM render nodes are assigned a "switcheroo-discrete-gpu" tag. It uses this information along with others to properly match this render node to a "card" node used by the `mutter-device-preferred-primary` udev tag.
 
 set -eu
 
@@ -92,8 +91,7 @@ else
     log "primary GPU for '$policy': $devname ($id_path)"
 fi
 
-# Force reload udev and re-process the cards so the user's composistor is aware of the changes when it  starts; the already-running GDM compositor ignores these change events for GPU selection.
+# Force reload udev and re-process the cards so the user's compositor is aware of the changes when it starts; the already-running GDM compositor ignores these change events for GPU selection.
 udevadm control --reload
 udevadm trigger --action=change --subsystem-match=drm --sysname-match='card*'
 udevadm settle
-```
