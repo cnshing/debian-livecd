@@ -1,9 +1,10 @@
+# Do not add quotes to any value from key `Pin`.
 # Block everything from Google Chrome's repo by default
 Package: *
-Pin: release o="Google LLC"
+Pin: release o=Google LLC
 Pin-Priority: -1
 
 # Allow the Chrome channel packages from Google's repo
 Package: google-chrome-stable google-chrome-beta google-chrome-unstable google-chrome-canary
-Pin: release o="Google LLC"
+Pin: release o=Google LLC
 Pin-Priority: 100

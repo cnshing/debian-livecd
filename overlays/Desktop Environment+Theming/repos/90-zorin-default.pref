@@ -1,3 +1,4 @@
+# Do not add quotes to any value from key `Pin`.
 # Block everything from Zorin by default
 Package: *
 Pin: release o=LP-PPA-zorinos-stable
