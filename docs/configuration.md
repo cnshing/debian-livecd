@@ -6,7 +6,7 @@ The following document describes all the high level configurations of the liveCD
 
 AppImages will replace packages not available through the Debian repositories in the `$HOME/AppImages` directory.
 
-Managing and integrating these AppImages into the desktop environment will be up to [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher), where it will be configured to look for `$HOME/AppImages`. The AppImageLauncher AppImage wil also be placed in the same directory.
+Managing and integrating these AppImages into the desktop environment will be up to [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher), where it will be configured to look for `$HOME/AppImages`. The AppImageLauncher AppImage will also be placed in the same directory.
 
 ## Audio Effects
 

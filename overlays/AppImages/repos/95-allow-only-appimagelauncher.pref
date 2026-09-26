@@ -4,7 +4,7 @@ Package: *
 Pin: release o=MX repository,n=bullseye
 Pin-Priority: -1
 
-# Allow AppImageLauncher and
+# Allow AppImageLauncher and dependencies
 Package: appimagelauncher libappimage0
 Pin: release o=MX repository,n=bullseye
 Pin-Priority: 100
