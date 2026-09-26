@@ -1,9 +1,10 @@
+# Do not add quotes to any value from key `Pin`.
 # Block everything from MX repository by default
 Package: *
-Pin: release o="MX repository"
+Pin: release o=MX repository
 Pin-Priority: -1
 
-# Allow ungoogled-chromium from MX's repository
-Package: ungoogled-chromium
-Pin: release o="MX repository"
+# Allow ungoogled-chromium and dependencies from MX's repository
+Package: ungoogled-chromium ungoogled-chromium-common ungoogled-chromium-sandbox
+Pin: release o=MX repository
 Pin-Priority: 100
