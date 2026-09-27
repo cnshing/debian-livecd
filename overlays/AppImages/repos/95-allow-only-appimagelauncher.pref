@@ -1,10 +1,10 @@
-# Block MX's bullseye (MX-21) repository 
+# Block Sparky's sisters repository
 # Do not add quotes to any value from key `Pin`.
 Package: *
-Pin: release o=MX repository,n=bullseye
+Pin: release o=SparkyLinux,n=sisters
 Pin-Priority: -1
 
-# Allow AppImageLauncher and dependencies
-Package: appimagelauncher libappimage0
-Pin: release o=MX repository,n=bullseye
+# Allow AppImageLauncher
+Package: appimagelauncher
+Pin: release o=SparkyLinux,n=sisters
 Pin-Priority: 100
