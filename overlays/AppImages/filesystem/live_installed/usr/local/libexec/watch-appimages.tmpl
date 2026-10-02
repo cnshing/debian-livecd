@@ -34,7 +34,7 @@ integrate() {
 [ -d "$DIR" ] || exit 0
 
 
-# NOTE: The script will fail to properly monitor any changes if the AppImages directory was removed until the next service restart, due to notifications from DELETE_SELF and MOVE_SELF.
+# NOTE: The script will fail to properly monitor any changes if the AppImages directory was removed until the next service restart, due to notifications from DELETE_SELF and MOVE_SELF while another program is holding the AppImage directory open
 # NOTE: Potential race-condition where a new AppImage fails to be detected if it appears during the transition between the initial file listing check and inotifywait watching
 {
     printf 'LISTED %s\n' "$DIR"/*
