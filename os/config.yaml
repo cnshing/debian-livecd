@@ -19,12 +19,13 @@ overlays:
   Flatpaks:
     packages:
       - com.parsecgaming.parsec
+      - it.mijorus.gearlever # AppImages
   AppImages:
-    appImageDir: /home/live/AppImages
+    appImageHomeDir: AppImages
   Remote Desktop+Rustdesk:
     configPaths:
-      RustDeskToml: /run/live/medium/RustDesk.toml # Configure RustDesk at the live medium directory
-      RustDesk2Toml: /run/live/medium/RustDesk2.toml
+      RustDeskToml: RustDesk.toml # Relative to the root of the physical live medium (the stick, not the ISO)
+      RustDesk2Toml: RustDesk2.toml
   Browser:
     ungoogled-chromium:
       installWebStore: true
