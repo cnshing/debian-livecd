@@ -1,0 +1,5 @@
+[Unit]
+Description=Integrate the AppImages put in ~/{{ overlay.config.appImageHomeDir }} with Gear Lever
+
+[Service]
+ExecStart=/usr/local/libexec/watch-appimages "%h/{{ overlay.config.appImageHomeDir }}"

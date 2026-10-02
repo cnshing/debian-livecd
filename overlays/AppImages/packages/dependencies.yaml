@@ -1,0 +1,41 @@
+
+- libfuse2t64 # FUSE required for AppImages - see https://github.com/AppImage/AppImageKit/wiki/FUSE
+- fuse3 # Includes required fusermount
+# Other dependencies from https://github.com/AppImageCommunity/pkg2appimage/blob/master/excludelist
+- libc6
+- libstdc++6
+- libgcc-s1
+# OpenGL (libglvnd) and Mesa
+- libgl1
+- libegl1
+- libglvnd0
+- libglx0
+- libopengl0
+- libdrm2
+- libgbm1
+# X11 and Wayland
+- libxcb1
+- libxcb-dri2-0
+- libxcb-dri3-0
+- libx11-6
+- libx11-xcb1
+- libice6
+- libsm6
+- libwayland-client0
+# Audio, which must match the host's sound server
+- libasound2t64
+- libjack-jackd2-0
+- libpipewire-0.3-0t64
+# Fonts and text
+- libfontconfig1
+- libfreetype6
+- libharfbuzz0b
+- libfribidi0
+# Base system
+- libcom-err2
+- libexpat1
+- libgpg-error0
+- libgmp10
+- libusb-1.0-0
+- libuuid1
+- zlib1g

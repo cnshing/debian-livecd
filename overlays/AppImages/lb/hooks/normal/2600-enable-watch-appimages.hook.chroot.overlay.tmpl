@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+
+# Prepare appimage daemon
+chmod a-x /etc/systemd/user/watch-appimages.*
+systemctl --global enable watch-appimages.path
