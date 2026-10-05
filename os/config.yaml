@@ -24,7 +24,7 @@ overlays:
     appImageHomeDir: AppImages
   Remote Desktop+Rustdesk:
     configPaths:
-      RustDeskToml: /run/live/medium/RustDesk.toml # Configure RustDesk at the live medium directo
+      RustDeskToml: /run/live/medium/RustDesk.toml # Configure RustDesk at the live medium directory
       RustDesk2Toml: /run/live/medium/RustDesk2.toml
   Browser:
     ungoogled-chromium:
