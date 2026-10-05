@@ -1,3 +1,4 @@
+# Do not add quotes to any value from key `Pin`.
 # Allow specific theme packages from Zorin
 Package: zorin-desktop-themes zorin-icon-themes
 Pin: release o=LP-PPA-zorinos-stable

@@ -1,0 +1,10 @@
+[Unit]
+Description=Wait for ~/{{ overlay.config.appImageHomeDir }} to integrate its AppImages with Gear Lever
+# Do not start service if the AppImage application is not installed
+ConditionPathExists=/var/lib/flatpak/exports/bin/it.mijorus.gearlever
+
+[Path]
+PathExists=%h/{{ overlay.config.appImageHomeDir }}
+
+[Install]
+WantedBy=default.target

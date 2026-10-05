@@ -1,0 +1,52 @@
+#!/bin/sh
+# Script to watch any AppImage changes in $DIR via inotify and integrates it to the desktop, as GearLever does not directly support this use-case, only integrating when a file is opened with GearLever.
+
+set -u
+
+DIR=$1
+STAGE=$DIR/.watch-appimages
+GEARLEVER=/var/lib/flatpak/exports/bin/it.mijorus.gearlever
+FAILED=" "
+
+# Gear Lever's menu entries name their AppImage in TryExec.
+registered() { grep -qsxF "TryExec=$1" "$HOME"/.local/share/applications/*.desktop; }
+
+integrate() {
+    f=$DIR/$1
+    case $1 in *.[Aa][Pp][Pp][Ii][Mm][Aa][Gg][Ee]) ;; *) return 0 ;; esac
+    [ -f "$f" ] && ! registered "$f" || return 0
+    case $FAILED in *" $(stat -c %i:%Y "$f") "*) return 0 ;; esac
+    # Work-around race condition to wait until app icon and desktop integration
+    sleep 5
+    [ -f "$f" ] && ! registered "$f" || return 0
+    # Workaround for GearLever not checking between an integrated AppImage and non-integrated one in the looking directory.
+    mkdir -p "$STAGE" && mv "$f" "$STAGE/" || return 0
+    if "$GEARLEVER" --integrate "$STAGE/$1" -y < /dev/null; then
+        rm -f "$STAGE/$1"
+    else
+        echo "Could not integrate $f, leaving it until it changes" >&2
+        FAILED="$FAILED$(stat -c %i:%Y "$STAGE/$1") " # Moving it back keeps both, rewriting it does not
+        mv "$STAGE/$1" "$f"
+    fi
+    rmdir "$STAGE" 2> /dev/null
+}
+
+[ -d "$DIR" ] || exit 0
+
+
+# NOTE: The script will fail to properly monitor any changes if the AppImages directory was removed until the next service restart, due to notifications from DELETE_SELF and MOVE_SELF while another program is holding the AppImage directory open
+# NOTE: Potential race-condition where a new AppImage fails to be detected if it appears during the transition between the initial file listing check and inotifywait watching
+{
+    printf 'LISTED %s\n' "$DIR"/*
+    exec inotifywait -mq -e close_write -e moved_to -e delete_self -e move_self --format '%e %w%f' "$DIR"
+} | while read -r event path; do
+    case $event:$path in
+        *_SELF*) # inotifywait keeps running without its folder
+            pkill -P $$ -x inotifywait
+            exit 0
+            ;;
+        LISTED:"$DIR"/* | CLOSE_WRITE*:"$DIR"/* | MOVED_TO*:"$DIR"/*)
+            integrate "${path#"$DIR"/}"
+            ;;
+    esac
+done
