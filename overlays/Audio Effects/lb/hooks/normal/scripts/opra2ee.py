@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# opra2ee.py converts database_v1.jsonl to EasyEffect Parametric EQ Harman IE/OE presets. 
+# opra2ee.py converts database_v1.jsonl to EasyEffects Parametric EQ Harman IE/OE presets.
 import json, re, sys
 from pathlib import Path
 
@@ -8,7 +8,7 @@ TYPES = {"peak_dip": "Bell", "low_shelf": "Lo-shelf", "high_shelf": "Hi-shelf",
          "low_pass": "Lo-pass", "high_pass": "Hi-pass"}  # band_pass/band_stop skipped, none in the data today
 
 def rank(eq):
-    # Prioritize by Harman first, then author, ten plain EQs.
+    # Prioritize by Harman first, then author, then plain EQs.
     d = eq.get("details", "").lower()
     non_harman = "harman" not in d and not d.startswith("measured by")
     a = eq["author"]
