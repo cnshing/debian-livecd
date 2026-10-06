@@ -1,0 +1,4 @@
+- easyeffects
+- lsp-plugins-lv2 # Equalizer plugin, only a Recommends of easyeffects
+- curl # Downloads OPRA
+- python3 # required by opra2ee.py 

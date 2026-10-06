@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -eu
+
+# Convert the OPRA headphone EQ database into EasyEffects community presets
+SRC=https://opra.roonlabs.net/database_v1.jsonl # Mirror OPRA asks open-source users to use instead of GitHub, see https://github.com/opra-project/OPRA/blob/main/docs/CONSUMING.md for why
+DEST=/usr/share/easyeffects/output/OPRA # EasyEffects 7.2 scans $XDG_DATA_DIRS/easyeffects/output/<package>/
+
+tmp=$(mktemp -d)
+curl -fsSL "$SRC" -o "$tmp/db.jsonl"
+python3 /live-build/config/hooks/normal/scripts/opra2ee.py "$tmp/db.jsonl" "$DEST"
+rm -rf "$tmp"
