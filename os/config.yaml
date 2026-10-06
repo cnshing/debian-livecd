@@ -15,6 +15,8 @@ overlays:
   Terminal: {}
   Display Manager: {}
   Text Editor: {}
+  Video Player: {}
+  Audio Effects: {}
   Remote Desktop: {}
   Flatpaks:
     packages:

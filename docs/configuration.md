@@ -10,7 +10,7 @@ Managing and integrating these AppImages into the desktop environment will be up
 
 ## Audio Effects
 
-Ideally, there should be an application that automatically applies an [AutoEQ](https://autoeq.app/) filter for whatever audio device you happen to listen on. Since there isn't any such application yet, [EasyEffects](https://github.com/wwmm/easyeffects) should be already installed so that the user can at least quickly import an impulse response.
+Ideally, there should be an application that automatically applies an [AutoEQ](https://autoeq.app/) filter for whatever audio device you happen to listen on. Since there isn't any such application yet, [EasyEffects](https://github.com/wwmm/easyeffects) should be installed along with built-in AutoEQ presets for various devices, specifically targeting Harman IE 2019/OE 2018 so the user can at least quickly select a Parametric EQ.
 
 ## Battery Management
 
