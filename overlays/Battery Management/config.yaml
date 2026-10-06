@@ -1,0 +1,8 @@
+charging: "" # TLP profile while plugged in (performance, balanced, power-saver)
+profiles: # TLP profiles by battery percentage while on battery
+  performance:
+    start: ""
+    end: ""
+  power-saver:
+    start: ""
+    end: ""

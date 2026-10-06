@@ -1,0 +1,44 @@
+#!/bin/sh
+# Generates Integrated and Dedicated GPU gnome session desktop files
+# Exec needs the explicit sh -c because GDM never runs it through a shell: it is split with g_shell_parse_argv and spawned directly (gdm daemon/gdm-wayland-session.c:306). If pkexec cannot apply the policy, its error lands in the journal and the session still starts, on whichever GPU Mutter would have picked by itself.
+
+set -eu
+
+SRC=/usr/share/wayland-sessions/gnome.desktop
+HELPER=/usr/local/bin/set-primary-gpu
+
+echo "[NVIDIA Optimus] ==> Generating GPU session entries..."
+
+if [ ! -f "$SRC" ]; then
+    echo "[NVIDIA Optimus] ==> ERROR: $SRC not found; available sessions:" >&2
+    ls -1 /usr/share/wayland-sessions/ >&2 || true
+    exit 1
+fi
+
+exec_line=$(sed -n 's/^Exec=//p' "$SRC")
+case $exec_line in
+    *\'* | *\"* | *\\*)
+        echo "[NVIDIA Optimus] ==> ERROR: $SRC Exec has quotes or backslashes, cannot wrap it: $exec_line" >&2
+        exit 1
+        ;;
+esac
+
+# Remove translated Name/Comment entries so they cannot override our custom labels, and don't advertise these GPU-specific sessions as being able to be run in headless.
+generate() {
+    policy=$1
+    label=$2
+    out=/usr/share/wayland-sessions/gnome-gpu-$policy.desktop
+    sed -e '/^Name\[/d' \
+        -e '/^Comment\[/d' \
+        -e '/^X-GDM-CanRunHeadless=/d' \
+        -e "s|^Name=.*|Name=GNOME ($label)|" \
+        -e "s|^Comment=.*|Comment=This session logs you into GNOME, preferring the $policy GPU|" \
+        -e "s#^Exec=\(.*\)#Exec=sh -c 'pkexec $HELPER $policy || true; exec \1'#" \
+        "$SRC" >"$out"
+    echo "[NVIDIA Optimus] ==> Wrote $out"
+}
+
+generate integrated "Integrated Graphics"
+generate dedicated "Dedicated Graphics"
+
+echo "[NVIDIA Optimus] ==> Generated successfully"

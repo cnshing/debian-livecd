@@ -16,9 +16,13 @@ Ideally, there should be an application that automatically applies an [AutoEQ](h
 
 [TLP](https://github.com/linrunner/TLP) will be used to optimize battery with performance. Preferentially, any laptop devices should use full computing power when charging and switch to power-saving mode within `0%` - `40%` battery thresholds.
 
+However, any power or battery settings manually changed by the user should take precedence for the session.
+
 ### NVIDIA Optimus
 
-If possible, there should be a separate boot entry from the standard one that explicitly enables screen rendering from a dedicated GPU, allowing the user to choose which use-case is most appropriate for their battery and performance needs.
+If possible, the user should be able to explicitly choose screen rendering from a dedicated GPU, deciding which use-case is most appropriate for their battery and performance needs.
+
+Specifically, this choice should be presented as three options at the login screen: Default, Integrated Graphics, and Dedicated Graphics, rendering the desktop session and subsequent applications using the selected GPU.
 
 ## Browser
 
