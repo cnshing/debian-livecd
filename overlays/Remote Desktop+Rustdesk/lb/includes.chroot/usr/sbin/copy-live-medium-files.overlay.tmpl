@@ -1,0 +1,145 @@
+#!/bin/sh
+# copy-live-medium-files: finds the filesystem on the physical device holding the LiveCD and copies files from it to another location.
+#
+#   copy-live-medium-files resolve [MEDIUM]
+#       Report how MEDIUM (default /run/live/medium) maps onto storage and
+#       print "MAJ:MIN KNAME FSTYPE" of that filesystem. Mounts nothing.
+#   copy-live-medium-files capture MEDIUM DIR FILE...
+#       Copy each FILE, relative to that filesystem's root, into DIR.
+
+# It identifies the filesystem by walking from the device behind MEDIUM's mount through what the kernel records in /sys/dev/block.
+
+
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+
+say() { echo "copy-live-medium-files: $*" >&2; }
+die() {
+    say "$*"
+    exit 1
+}
+
+# mountinfo escapes spaces as \040; not decoded here, since no live-boot mountpoint has one.
+mounted_dev() { awk -v m="$1" '$5 == m { d = $3 } END { if (!d) exit 1; print d }' /proc/self/mountinfo; }
+mounted_at() { awk -v d="$1" '$3 == d && $4 == "/" { print $5; exit }' /proc/self/mountinfo; }
+probe() { blkid -p -o value -s "$1" "/dev/$2" 2>/dev/null; }
+
+resolve() {
+    medium=${1:-/run/live/medium}
+    mm=$(mounted_dev "$medium") || die "$medium is not mounted"
+    i=0
+    while [ "$((i += 1))" -le 8 ]; do
+        sys=/sys/dev/block/$mm
+        [ -e "$sys" ] || die "$mm is not a block device (a toram copy, network or overlay): nothing physical to find"
+        k=$(basename "$(readlink -f "$sys")")
+        if [ -e "$sys/loop/backing_file" ]; then
+            f=$(cat "$sys/loop/backing_file")
+            [ -f "$f" ] || die "$k is backed by $f, not a file on a mounted filesystem"
+            d=$(stat -L -c %d "$f")
+            mm=$(((d >> 8) & 0xfff | (d >> 32) & ~0xfff)):$(((d & 0xff) | (d >> 12) & ~0xff))
+            say "$k: loop device on $f, which is on $mm"
+            continue
+        fi
+        set -- "$sys"/slaves/*
+        [ -e "$1" ] || break
+        [ $# -eq 1 ] || die "$k is built from $# devices ($(echo $(ls "$sys/slaves"))): ambiguous"
+        lower=${1##*/}
+        t=$(probe TYPE "$lower")
+        case $t in
+        '' | *_member | crypto_* | swap)
+            [ -n "$t" ] || [ -z "$(probe PTTYPE "$lower")" ] ||
+                die "$k maps part of $lower, a partitioned disk rather than a filesystem: unsupported"
+            say "$k: on $lower (${t:-no filesystem}), so $k holds the filesystem itself"
+            break
+            ;;
+        esac
+        say "$k: device-mapper device on $lower, which holds $t"
+        mm=$(cat "$1/dev")
+    done
+    [ "$i" -le 8 ] || die "gave up after 8 layers at $k"
+    echo "$mm $k $(probe TYPE "$k")"
+}
+
+capture() {
+    medium=$1 dest=$2
+    shift 2
+    src=$(resolve "$medium") || return 1
+    mm=${src%% *} k=${src#* } t=${k#* } k=${k%% *}
+    [ -n "$t" ] || die "$k holds no recognisable filesystem"
+
+    mnt=$(mounted_at "$mm")
+    if [ -n "$mnt" ]; then
+        say "$k ($t) is already mounted at $mnt"
+    else
+        mnt=$(mktemp -d /run/copy-live-medium-files.XXXXXX) || return 1
+        trap 'umount "$mnt" 2>/dev/null; rmdir "$mnt"' EXIT
+        # Through a read-only loop device: nothing can write to the drive, and it works even while a device-mapper map (Ventoy's) holds the partition.
+        modprobe -q loop
+        mount -o ro,loop,norecovery "/dev/$k" "$mnt" 2>/dev/null ||
+            mount -o ro,loop "/dev/$k" "$mnt" ||
+            die "cannot mount $k ($t) read-only"
+        say "mounted $k ($t) read-only at $mnt"
+    fi
+
+    umask 077
+    rc=0
+    for f; do
+        case /$f/ in
+        //* | */../* | */./*)
+            say "$f: skipped, not a relative path"
+            rc=1
+            continue
+            ;;
+        esac
+        if [ ! -e "$mnt/$f" ]; then
+            say "$f: not on $k"
+            continue
+        fi
+        # Symlinks may point anywhere; only follow ones that stay on $k.
+        real=$(realpath "$mnt/$f")
+        case $real in
+        "${mnt%/}"/*) ;;
+        *)
+            say "$f: leads off $k to $real, skipped"
+            continue
+            ;;
+        esac
+        if [ ! -f "$real" ]; then
+            say "$f: not a regular file, skipped"
+            continue
+        fi
+        mkdir -p "$dest/$(dirname "$f")" &&
+            cp "$real" "$dest/$f.part" &&
+            chmod 600 "$dest/$f.part" &&
+            mv -f "$dest/$f.part" "$dest/$f" ||
+            {
+                rm -f "$dest/$f.part"
+                say "$f: copy to $dest failed (out of space?)"
+                rc=1
+                continue
+            }
+        say "$f: copied from $k"
+    done
+    return $rc
+}
+
+main() {
+    # blkid must read the devices, or every lower device appears empty.
+    [ "$(id -u)" = 0 ] || die "must run as root"
+    case ${1:-} in
+    resolve)
+        shift
+        resolve "$@"
+        ;;
+    capture)
+        [ $# -ge 3 ] || die "usage: copy-live-medium-files capture MEDIUM DIR FILE..."
+        shift
+        capture "$@"
+        ;;
+    *)
+        echo "usage: copy-live-medium-files resolve [MEDIUM] | capture MEDIUM DIR FILE..." >&2
+        exit 2
+        ;;
+    esac
+}
+
+main "$@"

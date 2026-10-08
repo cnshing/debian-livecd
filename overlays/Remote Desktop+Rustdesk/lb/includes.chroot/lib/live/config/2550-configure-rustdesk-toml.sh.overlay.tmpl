@@ -1,7 +1,22 @@
 #!/bin/sh
 
-RUSTDESK_TOML="{{ overlay.config.configPaths.RustDeskToml }}"
-RUSTDESK_TOML2="{{ overlay.config.configPaths.RustDesk2Toml }}"
+# If a configured path is under /run/live/medium/, assume the user means the file at the root of the drive the image booted from.
+# Under Ventoy or toram, that drive is not what is mounted at /run/live/medium. With the copy-live-medium-files= boot parameter, the initramfs copies those files to /run/copy-live-medium-files before toram (see /usr/lib/live/boot/9995-copy-live-medium-files.sh).
+
+from_stick() {
+    path="$1"
+    name="${path#/run/live/medium/}" # same as path if not under /run/live/medium/
+    copy="/run/copy-live-medium-files/$name"
+
+    if [ "$name" != "$path" ] && [ -f "$copy" ]; then
+        echo "$copy"
+    else
+        echo "$path"
+    fi
+}
+
+RUSTDESK_TOML="$(from_stick "{{ overlay.config.configPaths.RustDeskToml }}")"
+RUSTDESK_TOML2="$(from_stick "{{ overlay.config.configPaths.RustDesk2Toml }}")"
 USERNAME="${LIVE_USERNAME:-live}"
 USER_HOME="$(getent passwd "$USERNAME" 2>/dev/null | cut -d: -f6)"
 

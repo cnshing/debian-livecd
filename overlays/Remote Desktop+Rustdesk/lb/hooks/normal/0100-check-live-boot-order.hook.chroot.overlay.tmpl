@@ -1,0 +1,12 @@
+#!/bin/sh
+# usr/lib/live/boot/9995-copy-live-medium-files.sh runs inside live-boot's Verify_checksums after find_livefs and before copy_live_to for toram.
+set -eu
+
+LIB=/usr/lib/live/boot
+
+if ! awk '/find_livefs/ { f = 1 } f && /Verify_checksums/ { v = 1 } v && /copy_live_to/ { ok = 1 } END { exit !ok }' "$LIB/9990-main.sh" ||
+    ! grep -q '^Verify_checksums' "$LIB/0030-verify-checksums"; then
+    echo "[RustDesk] ==> ERROR: live-boot $(dpkg-query -W -f '${Version}' live-boot) no longer calls Verify_checksums between find_livefs and copy_live_to; update 9995-copy-live-medium-files.sh" >&2
+    exit 1
+fi
+echo "[RustDesk] ==> live-boot call order OK"
