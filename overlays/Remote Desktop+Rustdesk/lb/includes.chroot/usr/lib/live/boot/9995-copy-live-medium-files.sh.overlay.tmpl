@@ -1,0 +1,24 @@
+#!/bin/sh
+# This file overrides Verify_checksums so that certain files can be copied into the LiveCD at boot. When live-boot calls Verify_checksums, the medium is already mounted and copy_live_to (toram) has not run yet.
+
+# For each copy-live-medium-files=FILE[,FILE...] boot parameter, it copies those files, then puts the original Verify_checksums back and runs it.
+
+
+Verify_checksums ()
+{
+	for _PARAMETER in ${LIVE_BOOT_CMDLINE:-$(cat /proc/cmdline)}
+	do
+		case "${_PARAMETER}" in
+			copy-live-medium-files=*)
+				# Copy into /run, which initramfs-tools moves into the real root. If there is no drive or no file, nothing is copied.
+				/usr/sbin/copy-live-medium-files capture "${1}" /run/copy-live-medium-files $(echo "${_PARAMETER#*=}" | tr ',' ' ') || true
+				;;
+		esac
+	done
+
+	if [ -e /lib/live/boot/0030-verify-checksums ]
+	then
+		. /lib/live/boot/0030-verify-checksums
+		Verify_checksums "${@}"
+	fi
+}

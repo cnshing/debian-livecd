@@ -1,0 +1,10 @@
+#!/bin/sh
+# Puts copy-live-medium-files (see /usr/lib/live/boot/9995-copy-live-medium-files.sh) in the initramfs. live-boot's own hook copies /usr/lib/live/boot but not this.
+
+PREREQ=""
+prereqs() { echo "$PREREQ"; }
+case "$1" in prereqs) prereqs; exit 0 ;; esac
+
+. /usr/share/initramfs-tools/hook-functions
+
+copy_file script /usr/sbin/copy-live-medium-files

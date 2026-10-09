@@ -3,6 +3,7 @@ lb:
   aptRecommends: true
   aptOptions: "-y -o APT::Default-Release=trixie" # NOTE: Default release should be the same as distribution
   win32Loader: false # win32-loader not supported on trixie distributions 
+  bootappendLive: boot=live components username=live locales=en_US.UTF-8 keyboard-layouts=us copy-live-medium-files=RustDesk.toml,RustDesk2.toml # copy-live-medium-files: files copied off the boot drive's root before toram, for RustDesk's /run/live/medium/ configPaths
 overlays:
   Networking: {}
   Networking+VPN: {}
