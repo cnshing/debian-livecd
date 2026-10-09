@@ -18,6 +18,12 @@ from_stick() {
 RUSTDESK_TOML="$(from_stick "{{ overlay.config.configPaths.RustDeskToml }}")"
 RUSTDESK_TOML2="$(from_stick "{{ overlay.config.configPaths.RustDesk2Toml }}")"
 USERNAME="${LIVE_USERNAME:-live}"
+# live-config only exports its default username ("user"); like its own components (0030-user-setup), read username from the boot parameters.
+for _PARAMETER in ${LIVE_CONFIG_CMDLINE:-$(cat /proc/cmdline)}; do
+    case "${_PARAMETER}" in
+        live-config.username=*|username=*) USERNAME="${_PARAMETER#*username=}" ;;
+    esac
+done
 USER_HOME="$(getent passwd "$USERNAME" 2>/dev/null | cut -d: -f6)"
 
 if [ -z "$USER_HOME" ]; then
