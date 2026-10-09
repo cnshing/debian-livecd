@@ -49,4 +49,6 @@ else
     echo "rustdesk: no config found at $RUSTDESK_TOML2, skipping" >&2
 fi
 
-chown -R "$USERNAME:$USERNAME" "$USER_HOME/.config/rustdesk"
+# mkdir -p ran as root, so it also made a missing ~/, that isn't owned by the live user, resulting in dconf not being able to save any setting.
+chown "$USERNAME:$USERNAME" "$USER_HOME/.config"
+chown -R "$USERNAME:$USERNAME" "$CFG_DST"
