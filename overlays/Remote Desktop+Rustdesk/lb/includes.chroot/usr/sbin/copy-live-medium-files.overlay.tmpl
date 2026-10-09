@@ -64,7 +64,7 @@ capture() {
     shift 2
     src=$(resolve "$medium") || return 1
     mm=${src%% *} k=${src#* } t=${k#* } k=${k%% *}
-    [ -n "$t" ] || die "$k holds no recognisable filesystem"
+    [ -n "$t" ] || die "$k holds no recognizable filesystem"
 
     mnt=$(mounted_at "$mm")
     if [ -n "$mnt" ]; then
