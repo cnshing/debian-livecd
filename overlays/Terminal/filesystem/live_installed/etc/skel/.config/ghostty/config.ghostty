@@ -8,3 +8,6 @@ selection-foreground =
 # blinking_cursor=No. `no-cursor` keeps the shell integration from switching to a blinking bar at the prompt.
 cursor-style-blink = false
 shell-integration-features = no-cursor
+
+# Conseratively add color for user@host and prevent xterm-ghostty terminfo
+term = xterm-256color
