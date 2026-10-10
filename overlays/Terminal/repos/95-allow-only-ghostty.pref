@@ -1,0 +1,10 @@
+# Do not add quotes to any value from key `Pin`.
+# Block everything from the griffo-free repository by default
+Package: *
+Pin: origin deb-free.griffo.io
+Pin-Priority: -1
+
+# Allow only Ghostty
+Package: ghostty
+Pin: origin deb-free.griffo.io
+Pin-Priority: 100
