@@ -5,6 +5,10 @@ accent-color='yellow'
 # Same as GNOME Settings > Appearance > Style > Dark
 color-scheme='prefer-dark'
 
+[org/gnome/desktop/background]
+picture-uri='file:///usr/share/backgrounds/fakurian/unsplash-7Ra7YDFR4Pw.avif'
+picture-uri-dark='file:///usr/share/backgrounds/heberdavisphotography/unsplash-ewW6dPCL_Vw.avif'
+
 [org/gnome/shell/extensions/accent-icons-theme]
 change-app-colors=true
 
