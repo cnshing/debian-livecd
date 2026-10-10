@@ -1,0 +1,10 @@
+# Do not add quotes to any value from key `Pin`.
+# Block everything from the elementary Stable PPA by default
+Package: *
+Pin: release o=LP-PPA-elementary-os-stable
+Pin-Priority: -1
+
+# Allow only Code and its other special dependency
+Package: io.elementary.code libcodecore0
+Pin: release o=LP-PPA-elementary-os-stable
+Pin-Priority: 100
