@@ -1,0 +1,57 @@
+[org/gnome/desktop/interface]
+#icon-theme='ZorinYellow-Dark' # NOTE: Let accent theme extensions handle GTK and icon theming
+#gtk-theme='ZorinYellow-Dark'
+accent-color='yellow'
+# Same as GNOME Settings > Appearance > Style > Dark
+color-scheme='prefer-dark'
+
+[org/gnome/desktop/background]
+picture-uri='file:///usr/share/backgrounds/fakurian/unsplash-7Ra7YDFR4Pw.avif'
+picture-uri-dark='file:///usr/share/backgrounds/heberdavisphotography/unsplash-ewW6dPCL_Vw.avif'
+
+[org/gnome/shell/extensions/accent-icons-theme]
+change-app-colors=true
+
+# colloid-icon-theme uses lowercase variant suffixes (Colloid-yellow-dark, not Colloid-Yellow-Dark)
+blue-theme-light='Colloid-light'
+blue-theme-dark='Colloid-dark'
+
+teal-theme-light='Colloid-teal-light'
+teal-theme-dark='Colloid-teal-dark'
+
+green-theme-light='Colloid-green-light'
+green-theme-dark='Colloid-green-dark'
+
+yellow-theme-light='Colloid-yellow-light'
+yellow-theme-dark='Colloid-yellow-dark'
+
+orange-theme-light='Colloid-orange-light'
+orange-theme-dark='Colloid-orange-dark'
+
+red-theme-light='Colloid-red-light'
+red-theme-dark='Colloid-red-dark'
+
+pink-theme-light='Colloid-pink-light'
+pink-theme-dark='Colloid-pink-dark'
+
+purple-theme-light='Colloid-purple-light'
+purple-theme-dark='Colloid-purple-dark'
+
+slate-theme-light='Colloid-grey-light'
+slate-theme-dark='Colloid-grey-dark'
+
+{%- macro whitesur_themes() %}
+{%- for accent, colour in [('blue', '-blue'), ('teal', ''), ('green', '-green'), ('yellow', '-yellow'), ('orange', '-orange'), ('red', '-red'), ('pink', '-pink'), ('purple', '-purple'), ('slate', '-grey')] %}
+{%- for style in ['Light', 'Dark'] %}
+{{ accent }}-theme-{{ style | lower }}='WhiteSur-{{ style }}{{ '-solid' if overlay.config.whitesur.opacity == 'solid' }}{{ colour }}{{ '-nord' if overlay.config.whitesur.scheme == 'nord' }}'
+{%- endfor %}
+{% endfor %}
+{%- endmacro %}
+
+[org/gnome/shell/extensions/accent-user-theme]
+# WhiteSur has no teal, so teal uses its default accent
+{{- whitesur_themes() }}
+[org/gnome/shell/extensions/accent-gtk-theme]
+set-link-gtk4=true
+set-theme-path='/usr/share/themes'
+{{ whitesur_themes() }}

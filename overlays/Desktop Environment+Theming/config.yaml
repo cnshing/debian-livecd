@@ -1,0 +1,5 @@
+whitesur: # The current GTK theme from https://github.com/vinceliuice/WhiteSur-gtk-theme
+  monterey: true # Whether to use the Monterey variant with pill-shaped tabs (true) or the original Big Sur style (false)
+  scheme: nord # standard | nord -> Use either the standard macOS color scheme or Nord
+  opacity: solid # normal | solid -> Normal (translucent panels) or solid
+  macWindowButtons: false # Whether to use macOS-style (true) or GNOME-style (false) window buttons

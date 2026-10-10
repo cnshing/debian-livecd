@@ -1,0 +1,24 @@
+#!/bin/sh
+
+set -eu
+
+# Installs WhiteSur GTK and GNOME Shell themes
+
+# Hardcode REF for stability, and because the titlebutton overrides below target this version's CSS
+REF=d5782652d412137e26fb8ff55b55a5572e4c6995
+SCRIPTS=/live-build/config/hooks/normal/scripts
+
+tmp=$(mktemp -d)
+curl -fsSL "https://github.com/vinceliuice/WhiteSur-gtk-theme/archive/$REF.tar.gz" | tar -xz -C "$tmp" --strip-components=1
+(cd "$tmp" && TERM=xterm ./install.sh {% if overlay.config.whitesur.monterey %}--monterey {% endif %}--scheme {{ overlay.config.whitesur.scheme }} --opacity {{ overlay.config.whitesur.opacity }} --theme all) # Its progress animation needs TERM and aborts silently without one
+rm -rf "$tmp" /usr/bin/gnome-theme-switcher /usr/share/applications/org.gnome.GTK4ThemeSwitcher.desktop # install.sh always adds this GTK4 theme switcher, which would conflict with the accent extensions
+
+{% if not overlay.config.whitesur.macWindowButtons %}
+# Swap WhiteSur's PNG window buttons for GTK symbolic icons
+for css in /usr/share/themes/WhiteSur-*/gtk-[34].0/gtk*.css; do
+    case "$css" in
+        */gtk-3.0/*) cat "$SCRIPTS/whitesur-titlebuttons-gtk3.css" >> "$css" ;;
+        *) cat "$SCRIPTS/whitesur-titlebuttons-gtk4.css" >> "$css" ;;
+    esac
+done
+{% endif %}
