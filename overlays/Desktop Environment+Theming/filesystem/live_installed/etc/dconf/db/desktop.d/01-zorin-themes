@@ -2,6 +2,8 @@
 #icon-theme='ZorinYellow-Dark' # NOTE: Let accent theme extensions handle gtk and icon theming
 #gtk-theme='ZorinYellow-Dark'
 accent-color='yellow'
+# Same as GNOME Settings > Appearance > Style > Dark
+color-scheme='prefer-dark'
 
 [org/gnome/shell/extensions/accent-icons-theme]
 change-app-colors=true
