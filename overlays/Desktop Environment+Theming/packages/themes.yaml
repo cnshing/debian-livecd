@@ -3,3 +3,6 @@
 - libreoffice-style-colibre
 - libreoffice-gtk3 # From https://askubuntu.com/questions/1547299/libreoffice-ui-suddenly-feels-like-win95
 - libreoffice-gtk4
+# AVIF support for Wallpaper selection in in /usr/share/backgrounds
+- heif-gdk-pixbuf
+- libheif-plugin-dav1d
