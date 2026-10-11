@@ -8,3 +8,4 @@
 - network-manager-ssh-gnome
 - network-manager-sstp-gnome
 - network-manager-vpnc-gnome
+- gnome-screenshot # This application has a delay screenshot feature
