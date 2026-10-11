@@ -44,6 +44,10 @@ Both [Bitwarden](https://bitwarden.com/) and [Proton Pass](https://proton.me/pas
 
 With [GSConnect](https://extensions.gnome.org/extension/1319/gsconnect/), a GNOME [KDEConnect](https://kdeconnect.kde.org/) implementation, installed and automatically enabled, users can pair and sync communications with the liveCD.
 
+### System Monitor
+
+[Mission Center](https://missioncenter.io/) should be installed to monitor CPU, memory, drives, network, GPU, fans and battery.
+
 ### Shell
 
 The desktop shell should traditionally include a [start menu](https://extensions.gnome.org/extension/3628/arcmenu/), an application [taskbar](https://extensions.gnome.org/extension/1160/dash-to-panel/), [system tray](https://extensions.gnome.org/extension/615/appindicator-support/) and [desktop icons](https://extensions.gnome.org/extension/2087/desktop-icons-ng-ding/) support.
@@ -52,7 +56,8 @@ The desktop shell should traditionally include a [start menu](https://extensions
 
 Enable the User Themes GNOME extension and [gnome-tweaks](https://gitlab.gnome.org/GNOME/gnome-tweaks). Then install the ZorinOS [desktop](https://github.com/ZorinOS/zorin-desktop-themes), [icon](https://github.com/ZorinOS/zorin-icon-themes), and [colibre](https://packages.debian.org/stable/libreoffice-style-colibre) LibreOffice theme. Most of the liveCD look-and-feel should come from [ZorinOS](https://zorin.com/os/).
 
-[comment - Update the desktop background picture-uri once a path of known background images are found]: #
+Any desktop wallpaper artwork should be encoded to AVIF at quality 92 from the highest-quality, full-resolution version available, whose files are separated by artist name under `/usr/share/backgrounds`.
+Additionally, each photo should be properly attributed under `/usr/share/backgrounds/ATTRIBUTIONS.txt`, crediting each artist and photo.
 
 ### Thumbnailers
 
@@ -109,11 +114,11 @@ The app should "just work", with no artificial barrier of access other than stan
 
 ## Terminal
 
-[Sakura](https://github.com/dabisu/sakura) will used with [scollbar enabled](settings.md#terminal). 
+[Ghostty](https://ghostty.org/) will be used with GUI tab support, scrollbar enabled, and [Sakura](https://github.com/dabisu/sakura)'s default Tango color scheme.
 
 ## Text Editor
 
-For basic text editing, [mousepad](https://github.com/xfce-mirror/mousepad) can do the job with these [preferences](settings.md#text-editor).
+For basic text editing, [Elementary Code](https://github.com/elementary/code) will be used. Any text editor should have its color scheme automatically match the current GNOME theme.
 
 For note taking and general document processing work, [LibreOffice](https://www.libreoffice.org/) should be setup.
 
