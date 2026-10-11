@@ -97,6 +97,18 @@ VPNs should be supported via [GNOME](#desktop-environment) with as many VPN plug
 
 Each mail service should be accompanied by corresponding web-app based client. In practice, these web-app implementations are often based off Electron.
 
+## Miscellaneous
+
+This section is for features which are technically useful but provides a less tangible obvious benefit.
+
+### Load to RAM
+
+Each boot entry should have an additional variant which copies the entire distribution to RAM storage, such that the live medium's Linux files are no longer required for general operation. 
+
+### Virtualization
+
+Various virtualization guest agents, such as [QEMU Guest Agent](https://gitlab.com/qemu-project/qemu/-/tree/master/qga), for example, should be installed for users virtualizing the distribution.
+
 ## Remote Desktop
 
 [Parsec](https://parsec.app) and [Rustdesk](https://rustdesk.com/) should be in the liveCD.
