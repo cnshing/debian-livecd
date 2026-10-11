@@ -27,6 +27,7 @@ overlays:
   Video Player: {}
   Audio Effects: {}
   Remote Desktop: {}
+  Miscellaneous+Load to RAM: {}
   Miscellaneous+Virtualization: {}
   Flatpaks:
     packages:
