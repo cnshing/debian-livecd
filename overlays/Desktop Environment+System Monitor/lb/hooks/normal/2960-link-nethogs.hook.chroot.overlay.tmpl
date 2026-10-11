@@ -1,0 +1,8 @@
+#!/bin/sh
+# Mission Center runs a bare "nethogs" as the user, whose PATH on Debian has no
+# /usr/sbin, where nethogs is shipped. Its "Run Additional Setup" does not cover
+# this; everything else (capabilities, powercap udev rule, sensors-detect) is
+# left to it.
+set -eu
+
+ln -sf /usr/sbin/nethogs /usr/bin/nethogs

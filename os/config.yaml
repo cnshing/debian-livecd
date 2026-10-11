@@ -11,6 +11,7 @@ overlays:
   Desktop Environment+Shell: {}
   Desktop Environment+Tweaks: {}
   Desktop Environment+Phone Sync: {}
+  Desktop Environment+System Monitor: {}
   Desktop Environment+Window Tiling: {}
   Desktop Environment+Theming:
     whitesur: # See overlays/Desktop Environment+Theming/config.yaml for documentation
@@ -30,6 +31,7 @@ overlays:
     packages:
       - com.parsecgaming.parsec
       - it.mijorus.gearlever # AppImages
+      - io.missioncenter.MissionCenter # System Monitor
   AppImages:
     appImageHomeDir: AppImages
   Remote Desktop+Rustdesk:
