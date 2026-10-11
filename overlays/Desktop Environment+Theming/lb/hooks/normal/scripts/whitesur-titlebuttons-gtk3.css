@@ -4,8 +4,8 @@
  * with Colloid's fixed light-theme colours swapped for currentColor so one file fits light and dark.
 */
 button.titlebutton:not(.suggested-action):not(.destructive-action) {
-  min-height: 22px;
-  min-width: 22px;
+  min-height: calc(22px * 1.2); /* Special change to increase button size */
+  min-width: calc(22px * 1.2); /* Special change to increase button size */
   padding: 0;
   margin: 0 4px;
 }
@@ -18,6 +18,12 @@ headerbar button.titlebutton.close:not(.raised):not(.suggested-action):not(.dest
   background-color: alpha(currentColor, 0.1);
   border-radius: 100%;
   box-shadow: none;
+}
+
+headerbar button.titlebutton.minimize:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) image,
+headerbar button.titlebutton.maximize:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) image,
+headerbar button.titlebutton.close:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) image {
+  -gtk-icon-transform: scale(1.2); /* Special change to increase button size */
 }
 
 headerbar button.titlebutton.minimize:hover:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque),

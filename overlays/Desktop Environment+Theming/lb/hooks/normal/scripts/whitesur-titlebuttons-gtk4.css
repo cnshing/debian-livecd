@@ -3,8 +3,8 @@
  * Adapted from Colloid's "normal" window buttons (vinceliuice/Colloid-gtk-theme, --tweaks normal).
 */
 windowcontrols > button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) {
-  min-height: 22px;
-  min-width: 22px;
+  min-height: calc(22px * 1.2); /* Special change to increase button size */
+  min-width: calc(22px * 1.2); /* Special change to increase button size */
   padding: 6px 0;
   margin-left: 4px;
   margin-right: 4px;
@@ -22,6 +22,9 @@ windowcontrols > button.minimize:not(.raised):not(.suggested-action):not(.destru
 windowcontrols > button.maximize:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) > image,
 windowcontrols > button.close:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) > image {
   color: inherit; /* WhiteSur hides the symbolic icon with color: transparent */
+  -gtk-icon-transform: scale(1.2); /* Special change to increase button size */
+  min-height: calc(16px * 1.2); /* Special change to increase button size */
+  min-width: calc(16px * 1.2); /* Special change to increase button size */
   padding: 0;
   border-radius: 100%;
   background-color: alpha(currentColor, 0.1);
