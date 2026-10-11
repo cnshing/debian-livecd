@@ -1,0 +1,5 @@
+- qemu-guest-agent # QEMU/KVM
+- spice-vdagent # SPICE
+- spice-webdavd # SPICE folder sharing
+- open-vm-tools-desktop # VMware
+- hyperv-daemons # Hyper-V

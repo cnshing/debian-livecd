@@ -27,6 +27,7 @@ overlays:
   Video Player: {}
   Audio Effects: {}
   Remote Desktop: {}
+  Miscellaneous+Virtualization: {}
   Flatpaks:
     packages:
       - com.parsecgaming.parsec
