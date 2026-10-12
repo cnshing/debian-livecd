@@ -7,7 +7,7 @@ fail() {
     exit 1
 }
 
-# Parse the top-level menu entres only for GRUB.
+# Parse the top-level menu entries only for GRUB.
 cfg=boot/grub/grub.cfg
 if [ -e "$cfg" ] && ! grep -q "(to RAM)" "$cfg"; then
     awk '

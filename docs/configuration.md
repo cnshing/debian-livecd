@@ -56,7 +56,7 @@ The desktop shell should traditionally include a [start menu](https://extensions
 
 Enable the User Themes GNOME extension and [gnome-tweaks](https://gitlab.gnome.org/GNOME/gnome-tweaks). Then install the WhiteSur [desktop](https://github.com/vinceliuice/WhiteSur-gtk-theme), Colloid [icon](https://github.com/vinceliuice/Colloid-icon-theme), and [colibre](https://packages.debian.org/stable/libreoffice-style-colibre) LibreOffice theme.
 
-Any desktop wallpaper artwork should be encoded to AVIF at quality 92 from the highest-quality, full-resolution version available, whose files are separated by artist name under `/usr/share/backgrounds`.
+Any desktop wallpaper artwork should be encoded to AVIF at quality 92 from the highest-quality, full-resolution version available, and stored under `/usr/share/backgrounds`, where files are separated by artist name.
 Additionally, each photo should be properly attributed under `/usr/share/backgrounds/ATTRIBUTIONS.txt`, crediting each artist and photo.
 
 ### Thumbnailers
@@ -99,11 +99,11 @@ Each mail service should be accompanied by corresponding web-app based client. I
 
 ## Miscellaneous
 
-This section is for features which are technically useful but provides a less tangible obvious benefit.
+This section is for features which are technically useful but provide a less tangible, more obscure benefit.
 
 ### Load to RAM
 
-Each boot entry should have an additional variant which copies the entire distribution to RAM storage, such that the live medium's Linux files are no longer required for general operation. 
+Each boot entry should have an additional variant which copies the entire distribution to RAM storage, such that the live medium's Linux files are no longer required for general operation.
 
 ### Virtualization
 
