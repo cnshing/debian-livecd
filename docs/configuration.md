@@ -54,7 +54,7 @@ The desktop shell should traditionally include a [start menu](https://extensions
 
 ### Theming
 
-Enable the User Themes GNOME extension and [gnome-tweaks](https://gitlab.gnome.org/GNOME/gnome-tweaks). Then install the ZorinOS [desktop](https://github.com/ZorinOS/zorin-desktop-themes), [icon](https://github.com/ZorinOS/zorin-icon-themes), and [colibre](https://packages.debian.org/stable/libreoffice-style-colibre) LibreOffice theme. Most of the liveCD look-and-feel should come from [ZorinOS](https://zorin.com/os/).
+Enable the User Themes GNOME extension and [gnome-tweaks](https://gitlab.gnome.org/GNOME/gnome-tweaks). Then install the WhiteSur [desktop](https://github.com/vinceliuice/WhiteSur-gtk-theme), Colloid [icon](https://github.com/vinceliuice/Colloid-icon-theme), and [colibre](https://packages.debian.org/stable/libreoffice-style-colibre) LibreOffice theme.
 
 Any desktop wallpaper artwork should be encoded to AVIF at quality 92 from the highest-quality, full-resolution version available, whose files are separated by artist name under `/usr/share/backgrounds`.
 Additionally, each photo should be properly attributed under `/usr/share/backgrounds/ATTRIBUTIONS.txt`, crediting each artist and photo.
