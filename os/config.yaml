@@ -23,6 +23,7 @@ overlays:
   Desktop Environment+Image Viewer: {}
   Terminal: {}
   Display Manager: {}
+  File Manager: {}
   Text Editor: {}
   Video Player: {}
   Audio Effects: {}
