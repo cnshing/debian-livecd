@@ -499,6 +499,61 @@ sudo update-alternatives --install /usr/bin/x-terminal-emulator x-terminal-emula
 
 Reference: [`2900-register-ghostty-terminal.hook.chroot.overlay.tmpl`](../overlays/Terminal/lb/hooks/normal/2900-register-ghostty-terminal.hook.chroot.overlay.tmpl)
 
+### Open in Terminal
+
+While Ghostty's own Nautilus extension adds "Open in Ghostty" to the context menu, it is not available in folders opened with `nautilus-admin`'s "Open as Administrator". The following adds an extension that enables it there, opening Ghostty with a root shell and requesting `sudo` elevation:
+
+```bash
+sudo tee /usr/share/nautilus-python/extensions/ghostty-admin.py <<'EOF'
+import os
+from gi.repository import Nautilus, GObject, Gio
+from ghostty import get_paths_to_open, _
+
+
+class LocalFolder:
+    """The part of Nautilus.FileInfo that ghostty.py reads, for the local folder behind an admin:// file."""
+
+    def __init__(self, file):
+        location = file.get_location() if file.is_directory() else file.get_parent_location()
+        self.location = Gio.File.new_for_uri(location.get_uri().replace('admin://', 'file://', 1))
+
+    def is_directory(self):
+        return True
+
+    def get_location(self):
+        return self.location
+
+
+def open_in_ghostty_as_root_activated(_menu, paths):
+    for path in paths:
+        # Change directory manually instead of relying on Ghostty's --working-directory, as a non-root user may not be allowed into that folder
+        cmd = ['ghostty', '--gtk-single-instance=false', '-e', 'sudo', '--', 'sh', '-c', 'cd -- "$1" && exec "$2"',
+            'sh', path, os.environ.get('SHELL', '/bin/sh')]
+        Gio.Subprocess.new(cmd, Gio.SubprocessFlags.NONE)
+
+
+def get_items_for_admin_files(name, files):
+    paths = get_paths_to_open([LocalFolder(file) for file in files if file.get_uri_scheme() == 'admin'])
+    if paths:
+        item = Nautilus.MenuItem(name=name, label=_('Open in Ghostty'), icon='com.mitchellh.ghostty')
+        item.connect('activate', open_in_ghostty_as_root_activated, paths)
+        return [item]
+    else:
+        return []
+
+
+class GhosttyAdminMenuProvider(GObject.GObject, Nautilus.MenuProvider):
+    def get_file_items(self, files):
+        return get_items_for_admin_files('GhosttyAdminNautilus::open_in_ghostty', files)
+
+    def get_background_items(self, file):
+        return get_items_for_admin_files('GhosttyAdminNautilus::open_folder_in_ghostty', [file])
+EOF
+nautilus -q
+```
+
+Reference: [`ghostty-admin.py`](../overlays/Terminal/filesystem/live_installed/usr/share/nautilus-python/extensions/ghostty-admin.py)
+
 ## Text Editor
 
 elementary Code is installed via the [elementary Stable PPA](https://launchpad.net/~elementary-os/+archive/ubuntu/stable).

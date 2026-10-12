@@ -23,7 +23,7 @@ class LocalFolder:
 
 def open_in_ghostty_as_root_activated(_menu, paths):
     for path in paths:
-        # The root shell changes directory itself, as the user may not be allowed into the folder
+        # Change directory manually instead of relying on Ghostty's --working-directory, as a non-root user may not be allowed into that folder
         cmd = ['ghostty', '--gtk-single-instance=false', '-e', 'sudo', '--', 'sh', '-c', 'cd -- "$1" && exec "$2"',
             'sh', path, os.environ.get('SHELL', '/bin/sh')]
         Gio.Subprocess.new(cmd, Gio.SubprocessFlags.NONE)
