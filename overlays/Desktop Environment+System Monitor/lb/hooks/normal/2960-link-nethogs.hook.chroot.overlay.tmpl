@@ -1,8 +1,5 @@
 #!/bin/sh
-# Mission Center runs a bare "nethogs" as the user, whose PATH on Debian has no
-# /usr/sbin, where nethogs is shipped. Its "Run Additional Setup" does not cover
-# this; everything else (capabilities, powercap udev rule, sensors-detect) is
-# left to it.
+# A Debian-specific fix for Mission Center where it attempts to run `nethogs` in an user env for network data. Since `nethogs` is an adminstrative tool, it is assumed to be in /usr/sbin, which is not an typically accessible PATH for these enviornments. 
 set -eu
 
 ln -sf /usr/sbin/nethogs /usr/bin/nethogs
