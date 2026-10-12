@@ -77,7 +77,7 @@ Applications should be able to be tiled to the top, bottom, left, and right halv
 
 ## File Manager
 
-There are some instances with GTK File Picker where it is hard coded such that only Gnome's [Nautilus](https://github.com/GNOME/nautilus) file manager can be opened, regardless of any other default file manager in the system. To remedy this there will be a primary file manager, [Thunar](https://gitlab.xfce.org/xfce/thunar), for daily use and a secondary file manager used for any situation where the primary file manager cannot be used. 
+There are some instances with GTK File Picker where it is hard coded such that only Gnome's [Nautilus](https://github.com/GNOME/nautilus) file manager can be opened, regardless of any other default file manager in the system, requiring us to keep it in the system. Regardless of which primary file manager used, the file manager should allow you to open the current folder in the Terminal or as Root through a right-click context menu.
 
 [comment - Make an explicit reference to the GNOME section in the future]: #
 
