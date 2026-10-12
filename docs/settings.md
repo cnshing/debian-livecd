@@ -411,7 +411,7 @@ EOF
 
 Reference: [`ffmpegthumbnailer-audio.thumbnailer`](../overlays/Desktop%20Environment+Thumbnailers/filesystem/live_installed/usr/share/thumbnailers/ffmpegthumbnailer-audio.thumbnailer), [`thumbnailers.yaml`](../overlays/Desktop%20Environment+Thumbnailers/packages/thumbnailers.yaml)
 
-Clear the thumbnail cache (`rm -r ~/.cache/thumbnails`) to regenerate previews that were already attempted.
+`gvfs-fuse` is also installed so that it is at least possible for thumbnailers to create previews of files on network shares, by allowing applications to work on those files as if they were on a regular filesystem.
 
 ### Tweaks
 

@@ -1,1 +1,2 @@
 - ffmpegthumbnailer
+- gvfs-fuse # Required to give thumbnailers access to network shares as a filesystem
