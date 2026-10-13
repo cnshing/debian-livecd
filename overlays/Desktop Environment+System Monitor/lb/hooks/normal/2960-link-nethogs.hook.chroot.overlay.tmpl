@@ -1,0 +1,5 @@
+#!/bin/sh
+# A Debian-specific fix for Mission Center where it attempts to run `nethogs` in an user env for network data. Since `nethogs` is an adminstrative tool, it is assumed to be in /usr/sbin, which is not an typically accessible PATH for these enviornments. 
+set -eu
+
+ln -sf /usr/sbin/nethogs /usr/bin/nethogs

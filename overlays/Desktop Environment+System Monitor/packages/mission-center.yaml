@@ -1,0 +1,11 @@
+# What the "Run Additional Setup" in Mission Center needs; it fails without them
+- nethogs
+- lm-sensors
+- libcap2-bin
+- pkexec
+- xdg-utils # xdg-open, its "View script" button
+- udev
+- udisks2
+- network-manager
+- libvulkan1 # GPU-related queries
+- libegl1

@@ -1,0 +1,52 @@
+#!/bin/sh
+# Generates "(to RAM)" boot entries by appending `toram` to the kernel parameters from boot/grub/grub.cfg (UEFI) and isolinux/live.cfg (BIOS).
+set -eu
+
+fail() {
+    echo "[Load to RAM] ==> ERROR: no live entry found in $1; live-build's menu format changed, update $0" >&2
+    exit 1
+}
+
+# Parse the top-level menu entries only for GRUB.
+cfg=boot/grub/grub.cfg
+if [ -e "$cfg" ] && ! grep -q "(to RAM)" "$cfg"; then
+    awk '
+    /^menuentry / { inblk = 1; blk = ""; live = 0 }
+    inblk {
+        line = $0
+        if (line ~ /^menuentry /) sub(/"( --hotkey=[^ ]+)? \{$/, " (to RAM)\" {", line)
+        if (line ~ /^[ \t]*linux[ \t]/ && line ~ /boot=live/ && line !~ / toram( |$)/) { live = 1; line = line " toram" }
+        blk = blk line "\n"
+        print
+        if ($0 == "}") { inblk = 0; if (live) copies = copies blk }
+        next
+    }
+    copies != "" { printf "%s", copies; copies = "" }
+    { print }
+    END { printf "%s", copies }
+    ' "$cfg" > "$cfg.tmp"
+    grep -q ' toram$' "$cfg.tmp" || fail "$cfg"
+    mv "$cfg.tmp" "$cfg"
+fi
+
+# Add non-default entries without any hotkeys to avoid conflicts for isolinux.
+cfg=isolinux/live.cfg
+if [ -e "$cfg" ] && ! grep -q "(to RAM)" "$cfg"; then
+    awk '
+    function flush() { if (live) copies = copies "\n" blk; blk = ""; live = 0; inblk = 0 }
+    /^label / { flush(); inblk = 1 }
+    inblk {
+        line = $0
+        if (line ~ /^label /) line = line "-toram"
+        if (line ~ /menu label /) { sub(/\^/, "", line); line = line " (to RAM)" }
+        if (line ~ /^[ \t]*append[ \t]/ && line ~ /boot=live/ && line !~ / toram( |$)/) { live = 1; line = line " toram" }
+        if (line !~ /menu default/ && line != "") blk = blk line "\n"
+    }
+    { print }
+    END { flush(); printf "%s", copies }
+    ' "$cfg" > "$cfg.tmp"
+    grep -q ' toram$' "$cfg.tmp" || fail "$cfg"
+    mv "$cfg.tmp" "$cfg"
+fi
+
+echo "[Load to RAM] ==> added toram boot entries"

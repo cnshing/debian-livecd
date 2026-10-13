@@ -1,0 +1,10 @@
+# Do not add quotes to any value from key `Pin`.
+# Block everything from the Ubuntu Budgie backports PPA by default
+Package: *
+Pin: release o=LP-PPA-ubuntubudgie-backports
+Pin-Priority: -1
+
+# Allow only the Colloid icon theme
+Package: colloid-icon-theme
+Pin: release o=LP-PPA-ubuntubudgie-backports
+Pin-Priority: 100

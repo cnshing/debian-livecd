@@ -1,0 +1,34 @@
+- name: ubuntubudgie-backports
+  repo: "deb [trusted=yes] https://ppa.launchpadcontent.net/ubuntubudgie/backports/ubuntu resolute main"
+  live: true
+  installed: true
+  binary: true
+  key: | # Fingerprint 2376 9467 0F10 68D8 9D7E A18B BB53 052A 2459 7C20, from https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x237694670F1068D89D7EA18BBB53052A24597C20
+    -----BEGIN PGP PUBLIC KEY BLOCK-----
+
+    xsFNBFiBQFQBEADerJrPpT9g8iggCaQQ/ZolRy/dpAt55R42vav+rQlEzfbs13S9
+    kVrXRvpGXUoW+Sz9TCVoHvXTKQCL8/MDmRmaM61flndAu1welQbsRIImlT9Z1lBJ
+    0dk1adkshmi/yvVRY6vxta84NEhs1mntkmqlvzRebHtOjiylm+70Iw3/Po64/dU/
+    NHa4aUYJSBxWHJQTbr6zE2ql9f0pEe4wv3/PPxGKJBbMzcqNWImh6/uSL9SLxt8a
+    XRLe2fllWByRPGQbZI+O1GukXfX0FLc+DeQVl2DlTiSIXku8BVlaAhrctAvj+c3f
+    IObm4DvHmCT8lGWDo2JMFBgGAjrsYLBnxTEtOv9TPqxTVquQNn9qasPaSykI+EcS
+    6E/K+UuK57gM2Zwldkj4FpYJdlos4ZX+TqjucQY7kXHipiE8cubcfBB/X6Kv1p9s
+    8tWOeumnATc246NlAFqN7aLjTXJhU8kU3Iwtw4u5bFI5Zm12uQlcexzgNnXos1+Q
+    ZEXCFCl6aSPiC+b4RPlDJSZKHvL/CupJm0LY8x3gqw5dcW3rYBaJqNIfpUfRvDwT
+    nC/KWKKxIJWnavoiQINyISx5dYFTZxDopjWuLqCiIAcSP+FRJhEsAuuk/jUxVC48
+    0kGVhsyVp/lsFzJzx5CzG2JvzdnKoG05XBuhpIFfwfpRMZUH7qK6okE7QwARAQAB
+    zR9MYXVuY2hwYWQgUFBBIGZvciBVYnVudHUgQnVkZ2llwsF4BBMBAgAiBQJYgUBU
+    AhsDBgsJCAcDAgYVCAIJCgsEFgIDAQIeAQIXgAAKCRC7UwUqJFl8IP73D/9pc9cl
+    LOjrhX+DEXo3yH9Od7ek/ysXVEl7SRP7SuGU7jAYBo5Z1DL1InL12Dd7V0rfq4Pk
+    imop4BNhw4qCkrFkHy9URGK713aet6Usut32wck4QQ0sgvmY3edgCs6FGwasy22c
+    HmfFDd69U12wsu9ULb6t6wrePFf7Vk2Hccc2+wU80bLPn5AvmPJkLr/bvC93A6Pa
+    /+55aYaKNVeVWCvtsIGoNkW0Nt8fHeHUtzu0HO6BVNcBlxLdxmzW7wGVB8RLukTR
+    EVg1c/5AIsRZAXzPpTtiVEi+FEsjLg7rBccdv/0ZE5Rrg+KBo38jKphMyBWpVLRw
+    ISYv02jU/R4ii9NuY46HD0MX4iCqZr3ce2FV9AWpQsGjHokLmi+IqBvUuW6KR0qt
+    YHac+YZroC5mxGYeMp6tySySjGcjdqAOYRGEW7E3l8D4q3X2n5/fs4o0YStYf2qn
+    qM3kPd9BlF2dgRD1OZ4kbjQKp+x7mpqwpZMGWx/TidzdZ7dvdHPWQy2+c/TjuXcJ
+    wf+xM+JRXl7o13TUXLwAMqcnfnH6J61oXyaidzoqsuXliOX+oMKdBVhUpfaaH872
+    TGxU3MRMBcXcPHag+A+c2DFTjts1JN9zknI4+0JNJmpLCprrt/FN+wscbqh74w7G
+    gNJT6U7xEofzJTc0JNYtgI7s3z/hiNt4ah7NPw==
+    =K3kH
+    -----END PGP PUBLIC KEY BLOCK-----

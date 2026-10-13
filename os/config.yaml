@@ -11,18 +11,30 @@ overlays:
   Desktop Environment+Shell: {}
   Desktop Environment+Tweaks: {}
   Desktop Environment+Phone Sync: {}
+  Desktop Environment+System Monitor: {}
   Desktop Environment+Window Tiling: {}
-  Desktop Environment+Theming: {}
+  Desktop Environment+Theming:
+    whitesur: # See overlays/Desktop Environment+Theming/config.yaml for documentation
+      monterey: true
+      scheme: nord
+      opacity: solid
+      macWindowButtons: false
+  Desktop Environment+Thumbnailers: {}
+  Desktop Environment+Image Viewer: {}
   Terminal: {}
   Display Manager: {}
+  File Manager: {}
   Text Editor: {}
   Video Player: {}
   Audio Effects: {}
   Remote Desktop: {}
+  Miscellaneous+Load to RAM: {}
+  Miscellaneous+Virtualization: {}
   Flatpaks:
     packages:
       - com.parsecgaming.parsec
       - it.mijorus.gearlever # AppImages
+      - io.missioncenter.MissionCenter # System Monitor
   AppImages:
     appImageHomeDir: AppImages
   Remote Desktop+Rustdesk:

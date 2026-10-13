@@ -44,15 +44,20 @@ Both [Bitwarden](https://bitwarden.com/) and [Proton Pass](https://proton.me/pas
 
 With [GSConnect](https://extensions.gnome.org/extension/1319/gsconnect/), a GNOME [KDEConnect](https://kdeconnect.kde.org/) implementation, installed and automatically enabled, users can pair and sync communications with the liveCD.
 
+### System Monitor
+
+[Mission Center](https://missioncenter.io/) should be installed to monitor CPU, memory, drives, network, GPU, fans and battery.
+
 ### Shell
 
 The desktop shell should traditionally include a [start menu](https://extensions.gnome.org/extension/3628/arcmenu/), an application [taskbar](https://extensions.gnome.org/extension/1160/dash-to-panel/), [system tray](https://extensions.gnome.org/extension/615/appindicator-support/) and [desktop icons](https://extensions.gnome.org/extension/2087/desktop-icons-ng-ding/) support.
 
 ### Theming
 
-Enable the User Themes GNOME extension and [gnome-tweaks](https://gitlab.gnome.org/GNOME/gnome-tweaks). Then install the ZorinOS [desktop](https://github.com/ZorinOS/zorin-desktop-themes), [icon](https://github.com/ZorinOS/zorin-icon-themes), and [colibre](https://packages.debian.org/stable/libreoffice-style-colibre) LibreOffice theme. Most of the liveCD look-and-feel should come from [ZorinOS](https://zorin.com/os/).
+Enable the User Themes GNOME extension and [gnome-tweaks](https://gitlab.gnome.org/GNOME/gnome-tweaks). Then install the WhiteSur [desktop](https://github.com/vinceliuice/WhiteSur-gtk-theme), Colloid [icon](https://github.com/vinceliuice/Colloid-icon-theme), and [colibre](https://packages.debian.org/stable/libreoffice-style-colibre) LibreOffice theme.
 
-[comment - Update the desktop background picture-uri once a path of known background images are found]: #
+Any desktop wallpaper artwork should be encoded to AVIF at quality 92 from the highest-quality, full-resolution version available, and stored under `/usr/share/backgrounds`, where files are separated by artist name.
+Additionally, each photo should be properly attributed under `/usr/share/backgrounds/ATTRIBUTIONS.txt`, crediting each artist and photo.
 
 ### Thumbnailers
 
@@ -72,7 +77,7 @@ Applications should be able to be tiled to the top, bottom, left, and right halv
 
 ## File Manager
 
-There are some instances with GTK File Picker where it is hard coded such that only Gnome's [Nautilus](https://github.com/GNOME/nautilus) file manager can be opened, regardless of any other default file manager in the system. To remedy this there will be a primary file manager, [Thunar](https://gitlab.xfce.org/xfce/thunar), for daily use and a secondary file manager used for any situation where the primary file manager cannot be used. 
+There are some instances with GTK File Picker where it is hard coded such that only Gnome's [Nautilus](https://github.com/GNOME/nautilus) file manager can be opened, regardless of any other default file manager in the system, requiring us to keep it in the system. Regardless of which primary file manager used, the file manager should allow you to open the current folder in the Terminal or as Root through a right-click context menu.
 
 [comment - Make an explicit reference to the GNOME section in the future]: #
 
@@ -92,6 +97,18 @@ VPNs should be supported via [GNOME](#desktop-environment) with as many VPN plug
 
 Each mail service should be accompanied by corresponding web-app based client. In practice, these web-app implementations are often based off Electron.
 
+## Miscellaneous
+
+This section is for features which are technically useful but provide a less tangible, more obscure benefit.
+
+### Load to RAM
+
+Each boot entry should have an additional variant which copies the entire distribution to RAM storage, such that the live medium's Linux files are no longer required for general operation.
+
+### Virtualization
+
+Various virtualization guest agents, such as [QEMU Guest Agent](https://gitlab.com/qemu-project/qemu/-/tree/master/qga), for example, should be installed for users virtualizing the distribution.
+
 ## Remote Desktop
 
 [Parsec](https://parsec.app) and [Rustdesk](https://rustdesk.com/) should be in the liveCD.
@@ -109,11 +126,11 @@ The app should "just work", with no artificial barrier of access other than stan
 
 ## Terminal
 
-[Sakura](https://github.com/dabisu/sakura) will used with [scollbar enabled](settings.md#terminal). 
+[Ghostty](https://ghostty.org/) will be used with GUI tab support, scrollbar enabled, and [Sakura](https://github.com/dabisu/sakura)'s default Tango color scheme.
 
 ## Text Editor
 
-For basic text editing, [mousepad](https://github.com/xfce-mirror/mousepad) can do the job with these [preferences](settings.md#text-editor).
+For basic text editing, [Elementary Code](https://github.com/elementary/code) will be used. Any text editor should have its color scheme automatically match the current GNOME theme.
 
 For note taking and general document processing work, [LibreOffice](https://www.libreoffice.org/) should be setup.
 
