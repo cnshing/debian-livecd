@@ -20,7 +20,7 @@ overlays:
       opacity: solid
       macWindowButtons: false
   Desktop Environment+Thumbnailers: {}
-  Desktop Environment+Image Viewer: {}
+  Image Viewer: {}
   Terminal: {}
   Display Manager: {}
   File Manager: {}
