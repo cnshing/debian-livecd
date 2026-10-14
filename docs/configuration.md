@@ -44,10 +44,6 @@ Both [Bitwarden](https://bitwarden.com/) and [Proton Pass](https://proton.me/pas
 
 With [GSConnect](https://extensions.gnome.org/extension/1319/gsconnect/), a GNOME [KDEConnect](https://kdeconnect.kde.org/) implementation, installed and automatically enabled, users can pair and sync communications with the liveCD.
 
-### System Monitor
-
-[Mission Center](https://missioncenter.io/) should be installed to monitor CPU, memory, drives, network, GPU, fans and battery.
-
 ### Shell
 
 The desktop shell should traditionally include a [start menu](https://extensions.gnome.org/extension/3628/arcmenu/), an application [taskbar](https://extensions.gnome.org/extension/1160/dash-to-panel/), [system tray](https://extensions.gnome.org/extension/615/appindicator-support/) and [desktop icons](https://extensions.gnome.org/extension/2087/desktop-icons-ng-ding/) support.
@@ -88,6 +84,10 @@ Any packages not conveniently available as an AppImage or Debian package may use
 ## Networking
 
 [NetworkManager](https://networkmanager.dev/) is sufficient for Internet with ease of use and GNOME integration. 
+
+### System Monitor
+
+[Mission Center](https://missioncenter.io/) should be installed to monitor CPU, memory, drives, network, GPU, fans and battery.
 
 ### VPN
 
