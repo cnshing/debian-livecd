@@ -28,13 +28,10 @@ overlays:
   Video Player: {}
   Audio Effects: {}
   Remote Desktop: {}
+  Remote Desktop+Parsec: {}
   Miscellaneous+Load to RAM: {}
   Miscellaneous+Virtualization: {}
-  Flatpaks:
-    packages:
-      - com.parsecgaming.parsec
-      - it.mijorus.gearlever # AppImages
-      - io.missioncenter.MissionCenter # System Monitor
+  Flatpaks: {} # Required for AppImages, System Monitor, and Parsec
   AppImages:
     appImageHomeDir: AppImages
   Remote Desktop+Rustdesk:

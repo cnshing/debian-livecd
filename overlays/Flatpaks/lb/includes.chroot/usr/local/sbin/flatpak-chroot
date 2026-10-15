@@ -1,0 +1,134 @@
+#!/bin/sh
+# A script to succesfully install system-wide Flatpak apps for headless chroot
+
+# Flatpak apps with an "extra data" ref are not able to be installed due to the lack of user namespaces. A detection is run to defer these flatpak installations to the live boot stage.\
+
+# Extra-data refs are identified by detached commit metadata size: signature-only is ~592 bytes, one carrying an xa.extra-data payload is orders of magnitude larger.
+
+#   flatpak-chroot install [--mode auto|deferred|now] ID...
+#     auto      deploy in the chroot, or at live boot when it cannot (default)
+#     deferred  deploy at live boot
+#     now       deploy in the chroot, fail the build if the chroot cannot
+#
+
+set -eu
+
+MIRROR=/var/lib/flatpak/repo/refs/remotes/flathub
+
+usage() {
+    echo "usage: flatpak-chroot install [--mode auto|deferred|now] ID..." >&2
+    exit 2
+}
+
+die() {
+    echo "flatpak-chroot: $*" >&2
+    exit 1
+}
+
+add_remote() {
+    flatpak --system remote-add --if-not-exists flathub \
+        https://dl.flathub.org/repo/flathub.flatpakrepo
+}
+
+pull() {
+    for id in ${PKGS}; do
+        flatpak --system install --no-deploy -y --noninteractive flathub "${id}"
+    done
+}
+
+update_appstream() {
+    # Also creates appstream/ and appstream2/ refs, and deploys them itself.
+    flatpak --system update --appstream -y
+}
+
+# Only app/ and runtime/ are installable refs; appstream2/x86_64 would fail id validation.
+refs() {
+    [ -d "${MIRROR}" ] || return 0
+    (cd "${MIRROR}" && find app runtime -type f 2>/dev/null | sort)
+}
+
+deploy() {
+    DEPLOYABLE=""
+    cd "${MIRROR}"
+    for ref in ${NEW}; do
+        commit=$(cat "${ref}")
+        meta="/var/lib/flatpak/repo/objects/$(echo "${commit}" | cut -c1-2)/$(echo "${commit}" | cut -c3-).commitmeta"
+        [ "$(wc -c < "${meta}")" -gt 100000 ] && continue
+        DEPLOYABLE="${DEPLOYABLE} ${ref}"
+    done
+    cd /
+
+    # One invocation so the transaction orders runtimes before their extensions.
+    [ -z "${DEPLOYABLE}" ] || flatpak --system install --no-pull -y --noninteractive flathub ${DEPLOYABLE}
+}
+
+run_triggers() {
+    for t in /usr/share/flatpak/triggers/*.trigger; do
+        "${t}" /var/lib/flatpak
+    done
+}
+
+# Pull the refs but do not install them immediately, instead defer the install at live boot. Refs shared with another app may be in its script too, or already deployed by flatpak resolving them as a dependency, hence the active check.
+write_boot_script() {
+    boot="/usr/lib/live/config/2500-flatpak-${id}"
+    cat > "${boot}" << EOF
+#!/bin/sh
+# Written by flatpak-chroot: deploys the refs of ${id} it pulled but could not deploy.
+set -eu
+
+REFS="${PENDING# }"
+EOF
+    cat >> "${boot}" << 'EOF'
+
+PENDING=""
+for ref in ${REFS}; do
+    [ -e "/var/lib/flatpak/${ref}/active" ] || PENDING="${PENDING} ${ref}"
+done
+
+[ -n "${PENDING}" ] || exit 0
+
+# One invocation so the transaction orders runtimes before their extensions.
+flatpak --system install --no-pull -y --noninteractive flathub ${PENDING}
+EOF
+    chmod -vc 0755 "${boot}"
+}
+
+install_app() {
+    id=$1
+    before=$(refs)
+    PKGS="${id}"
+    pull
+    update_appstream
+    NEW=$(refs | grep -vxF "${before}" || true)
+
+    if [ "${MODE}" != deferred ]; then
+        deploy
+        run_triggers
+    fi
+
+    PENDING=""
+    for ref in ${NEW}; do
+        [ -e "/var/lib/flatpak/${ref}/active" ] || PENDING="${PENDING} ${ref}"
+    done
+    [ -n "${PENDING}" ] || return 0
+    [ "${MODE}" != now ] || die "${id}: cannot deploy${PENDING} in a chroot (extra data), use --mode auto or deferred"
+    write_boot_script
+}
+
+[ "${1:-}" = install ] || usage
+shift
+MODE=auto
+if [ "${1:-}" = --mode ]; then
+    [ $# -ge 2 ] || usage
+    MODE=$2
+    shift 2
+fi
+case "${MODE}" in auto | deferred | now) ;; *) usage ;; esac
+[ $# -gt 0 ] || usage
+
+trap 'rm -rf /var/tmp/flatpak-cache-* /root/.cache/flatpak /root/.local/share/flatpak' EXIT
+
+add_remote
+for app in "$@"; do
+    install_app "${app}"
+done

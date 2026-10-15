@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+
+chmod +x /usr/local/sbin/flatpak-chroot # Allow later hooks to run flatpak-chroot
