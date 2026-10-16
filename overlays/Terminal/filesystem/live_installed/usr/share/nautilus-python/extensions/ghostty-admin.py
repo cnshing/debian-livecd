@@ -4,7 +4,17 @@
 
 import os
 from gi.repository import Nautilus, GObject, Gio
-from ghostty import get_paths_to_open, _
+
+try:
+    from ghostty import get_paths_to_open, _
+except ModuleNotFoundError as e:
+    # When Ghostty is uninstalled
+    if e.name != 'ghostty':
+        raise
+
+    # Find no paths, so as to show no menu item
+    def get_paths_to_open(files):
+        return []
 
 
 class LocalFolder:
