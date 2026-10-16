@@ -1,0 +1,2 @@
+. "${0%/*}/../uninstall-extension.sh"
+uninstall_extension{% for exts in overlay.config.extensions.values() %}{% for ext in exts if ext.name == "Proton Pass" %} "{{ ext.id }}"{% endfor %}{% endfor %}

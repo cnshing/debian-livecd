@@ -1,0 +1,3 @@
+# This removes the manually installed uBlock Origin Lite for Ad Blocking in Google Chrome
+. "${0%/*}/../uninstall-extension.sh"
+uninstall_extension{% for exts in overlay.config.extensions.values() %}{% for ext in exts %} "{{ ext.id }}"{% endfor %}{% endfor %}

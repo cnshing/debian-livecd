@@ -1,0 +1,2 @@
+libreoffice* # Also removes any theming from Desktop Environment+Theming applying to LibreOffice
+python3-uno

@@ -1,0 +1,2 @@
+ungoogled-chromium* # With -common and -sandbox
+webext-ublock-origin-chromium # Remove the extension just in case

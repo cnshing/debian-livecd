@@ -1,0 +1,4 @@
+80-browsers/firefox
+80-browsers/ungoogled-chromium
+{% for browser, exts in overlay.config.extensions.items() if exts %}80-browsers/{{ browser }}
+{% endfor %}
