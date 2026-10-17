@@ -1,0 +1,71 @@
+#!/bin/sh
+# Creates the main menu item for "Select optional features".
+
+# Looks up the configuration in `/usr/share/debian-livecd-installer` to generate the menu.
+
+# Any "invalid" configurations are met with an error, preventing the user from continuing.
+
+# Any "suspicious" configurations are met with a warning asking the user to confirm their choices.
+
+
+set -e
+. /usr/share/debconf/confmodule
+db_capb backup
+
+LIB=/usr/lib/debian-livecd-installer
+. $LIB/manifest.sh
+. $LIB/page.sh
+. $LIB/requires.sh
+. $LIB/import.sh
+. $LIB/warn.sh
+. $LIB/exclude.sh
+
+mkdir -p "$STATE"
+if ! manifest_load; then
+	log "Cannot mount $IMAGE"
+	exit 1
+fi
+
+again=
+while :; do
+	page_ask || exit 10
+	page_answers
+	problems= warnings=
+	requires_check
+	import_check
+	warn_check
+	if [ -n "$problems" ]; then
+		if [ -z "$displayed" ]; then
+			# Any invalid preseeding will be skipped
+			log "Skipping installation because its requirements are unmet:$unmet"
+			for id in $unmet; do
+				grep -vx "$id" "$STATE/selected" > "$STATE/selected.new" || true
+				mv "$STATE/selected.new" "$STATE/selected"
+				echo "$id" >> "$STATE/deselected"
+			done
+			break
+		fi
+		db_subst debian-livecd-installer/requires ERRORS "$problems"
+		db_fset debian-livecd-installer/requires seen false
+		db_input critical debian-livecd-installer/requires || true
+		db_go || true
+		again=1
+		continue
+	fi
+	if [ -n "$warnings" ] && [ -n "$displayed" ]; then
+		db_subst debian-livecd-installer/warning WARNINGS "$warnings"
+		db_fset debian-livecd-installer/warning seen false
+		db_input high debian-livecd-installer/warning || true
+		if ! db_go; then
+			again=1
+			continue
+		fi
+	fi
+	break
+done
+
+exclude_write
+
+log "installing: $(echo $(cat "$STATE/selected"))"
+log "not installing: $(echo $(cat "$STATE/deselected"))"
+exit 0

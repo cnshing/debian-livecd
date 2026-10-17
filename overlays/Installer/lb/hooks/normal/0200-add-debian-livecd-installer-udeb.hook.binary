@@ -1,0 +1,68 @@
+#!/bin/sh
+# Builds the `debian-livecd-installer` udeb and adds it to the Debian Installer's package pool as a local udeb.
+set -eu
+
+fail() {
+    echo "[Installer] ==> ERROR: $*" >&2
+    exit 1
+}
+
+packages=$(find dists -path '*/main/debian-installer/binary-*/Packages' 2> /dev/null | head -n1)
+if [ ! -d pool-udeb ] || [ -z "$packages" ]; then
+    echo "[Installer] ==> no Debian Installer in this image, nothing to add"
+    exit 0
+fi
+
+# Fails the build if live-installer no longer copies the SquashFS filesystem the way `zz-intercept-gnu-tar` expects.
+udeb=$(find pool-udeb -name 'live-installer_*.udeb' | head -n1)
+[ -n "$udeb" ] || fail "no live-installer udeb in the image"
+postinst=$(dpkg-deb --ctrl-tarfile "$udeb" | tar -xO ./postinst)
+for line in 'for script in $(ls /lib/live-installer/*); do' 'STEPS=$(eval ${SUPPORT}_count)' \
+    'tar c . | \' '(chdir /target && tar xv) | \' 'partsdir="/usr/lib/live-installer.d"'; do
+    printf '%s\n' "$postinst" | grep -qF -- "$line" ||
+        fail "$(basename "$udeb") no longer has '$line'; update zz-intercept-gnu-tar"
+done
+
+# Builds the udeb and manually marks the scripts as executable.
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+cp -r ../config/debian-livecd-installer-udeb "$work/tree"
+find "$work/tree" -type d -exec chmod 755 {} +
+find "$work/tree" -type f -exec sh -c '
+    for f; do if [ "$(head -c2 "$f")" = "#!" ]; then chmod 755 "$f"; else chmod 644 "$f"; fi; done' sh {} +
+field() { sed -n "s/^$1: *//p" "$work/tree/DEBIAN/control"; }
+package=$(field Package)
+grep -qx "Package: $package" "$packages" && fail "$package is in the pool already"
+dir=pool-udeb/main/$(echo "$package" | cut -c1)/$package
+deb=$dir/${package}_$(field Version)_$(field Architecture).udeb
+mkdir -p "$dir"
+dpkg-deb --root-owner-group -Zxz --build "$work/tree" "$deb" > /dev/null
+
+# Adds the udeb to the pool's Packages index
+{
+    [ -z "$(tail -n1 "$packages")" ] || echo
+    dpkg-deb -f "$deb"
+    echo "Filename: $deb"
+    echo "Size: $(wc -c < "$deb")"
+    echo "MD5sum: $(md5sum "$deb" | cut -d' ' -f1)"
+    echo "SHA256: $(sha256sum "$deb" | cut -d' ' -f1)"
+    echo
+} >> "$packages"
+gzip -9 -n -c "$packages" > "$packages.gz"
+
+# Updates the index's size and checksums in Release
+suite=${packages%%/main/*}
+for f in "$packages" "$packages.gz"; do
+    awk -v name="${f#"$suite"/}" -v size="$(wc -c < "$f")" -v md5="$(md5sum "$f" | cut -d' ' -f1)" \
+        -v sha1="$(sha1sum "$f" | cut -d' ' -f1)" -v sha256="$(sha256sum "$f" | cut -d' ' -f1)" \
+        -v sha512="$(sha512sum "$f" | cut -d' ' -f1)" '
+        /^[^ ]/ { section = $1 }
+        NF == 3 && $3 == name {
+            hash = section == "MD5Sum:" ? md5 : section == "SHA1:" ? sha1 : section == "SHA256:" ? sha256 : section == "SHA512:" ? sha512 : ""
+            if (hash != "") { printf " %s %s %s\n", hash, size, name; next }
+        }
+        { print }' "$suite/Release" > "$work/Release"
+    cat "$work/Release" > "$suite/Release"
+done
+
+echo "[Installer] ==> added $deb"

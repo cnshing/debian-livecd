@@ -63,3 +63,4 @@ overlays:
           name: Bitwarden
         - id: ghmbeldphafepmbegfdlkpapadhbakde
           name: Proton Pass
+  Installer: {}

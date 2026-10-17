@@ -1,0 +1,4 @@
+os:
+  lb:
+    debianInstaller: live
+    debianInstallerGui: true
