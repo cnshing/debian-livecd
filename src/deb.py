@@ -366,7 +366,7 @@ class Deb:
                 )
                 if "os" in overlay_config and type(overlay_config["os"]) is dict:
                     config = merge_dict(
-                        config,
                         overlay_config["os"],
+                        config,
                     )
         return Deb(config)
