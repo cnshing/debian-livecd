@@ -81,6 +81,10 @@ There are some instances with GTK File Picker where it is hard coded such that o
 
 Any packages not conveniently available as an AppImage or Debian package may use Flatpaks as an alternative source.
 
+## Installer
+
+Users should be able to install the operating system with the ability to turn on/off certain features conveniently via the live session or a boot menu entry.
+
 ## Networking
 
 [NetworkManager](https://networkmanager.dev/) is sufficient for Internet with ease of use and GNOME integration. 

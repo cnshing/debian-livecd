@@ -502,12 +502,21 @@ Reference: [`2900-register-ghostty-terminal.hook.chroot.overlay.tmpl`](../overla
 ### Open in Terminal
 
 While Ghostty's own Nautilus extension adds "Open in Ghostty" to the context menu, it is not available in folders opened with `nautilus-admin`'s "Open as Administrator". The following adds an extension that enables it there, opening Ghostty with a root shell and requesting `sudo` elevation:
-
 ```bash
 sudo tee /usr/share/nautilus-python/extensions/ghostty-admin.py <<'EOF'
 import os
 from gi.repository import Nautilus, GObject, Gio
-from ghostty import get_paths_to_open, _
+
+try:
+    from ghostty import get_paths_to_open, _
+except ModuleNotFoundError as e:
+    # Only ghostty.py itself missing, as when Ghostty is uninstalled, rather than anything it fails to import
+    if e.name != 'ghostty':
+        raise
+
+    # Find no paths, so as to show no menu item
+    def get_paths_to_open(files):
+        return []
 
 
 class LocalFolder:
@@ -697,6 +706,7 @@ Description=Easy Effects
 PartOf=graphical-session.target
 After=graphical-session.target
 ConditionUser=!@system
+ConditionFileIsExecutable=/usr/bin/easyeffects
 
 [Service]
 ExecStart=/usr/bin/easyeffects --gapplication-service
@@ -718,6 +728,16 @@ sudo python3 opra2ee.py database_v1.jsonl /usr/share/easyeffects/output/OPRA
 ```
 
 Reference: [`opra2ee.py`](../overlays/Audio%20Effects/lb/hooks/normal/scripts/opra2ee.py), [`2800-install-opra-presets.hook.chroot.overlay.tmpl`](../overlays/Audio%20Effects/lb/hooks/normal/2800-install-opra-presets.hook.chroot.overlay.tmpl)
+
+## Flatpaks
+
+The *Flatpaks* overlay provides Flatpak support and `flatpak-chroot`, to assist in safely installing Flathub apps in a chrooted environment. Regular users should otherwise install Flatpaks through normal means.
+
+```sh
+flatpak-chroot install "{{ overlay.config.flatpakAppId }}"
+```
+
+Reference: [`flatpak.yaml`](../overlays/Flatpaks/packages/flatpak.yaml), [`flatpak-chroot`](../overlays/Flatpaks/lb/includes.chroot/usr/local/sbin/flatpak-chroot), [`0010-enable-flatpak-chroot.hook.chroot`](../overlays/Flatpaks/lb/hooks/normal/0010-enable-flatpak-chroot.hook.chroot), [`2500-install-parsec-flatpak.hook.chroot.overlay.tmpl`](../overlays/Remote%20Desktop+Parsec/lb/hooks/normal/2500-install-parsec-flatpak.hook.chroot.overlay.tmpl)
 
 ## AppImages
 
