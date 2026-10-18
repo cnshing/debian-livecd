@@ -1,0 +1,3 @@
+#!/bin/sh
+# Bandaid to prevent Rustdesk from being auto-removed from live-installer's 14remove-live-packages
+sed -i 's|^for list in /cdrom/live/filesystem.packages-remove; do$|for list in; do|' /usr/lib/finish-install.d/14remove-live-packages
