@@ -1,1 +1,3 @@
 - webext-ublock-origin-firefox
+- webext-ublock-origin-chromium
+- chromium- # apt-get install's "not this": keeps out the extension's Recommends, Debian's chromium

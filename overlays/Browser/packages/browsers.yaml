@@ -2,3 +2,4 @@
 - firefox-esr
 - ungoogled-chromium
 - jq # For parsing Firefox .xpi manifest
+- curl # Downloads the extensions and the Chromium Web Store
