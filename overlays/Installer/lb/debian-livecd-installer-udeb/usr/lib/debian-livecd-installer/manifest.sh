@@ -19,10 +19,13 @@ choices() { for f in "$M/$1"/*/label; do [ -f "$f" ] && basename "${f%/label}"; 
 manifest_load() {
 	[ -d "$M" ] && return 0
 	ANNA_QUIET=1 anna-install squashfs-modules || true
+	# depmod before installing to load squashfs-modules
+	[ ! -x /sbin/depmod ] || depmod -a > /dev/null 2>&1 || true
 	modprobe squashfs 2>/dev/null || true
 	modprobe loop 2>/dev/null || true
-	mkdir -p "$STATE/image" "$M"
+	mkdir -p "$STATE/image"
 	mount -t squashfs -o loop,ro "$IMAGE" "$STATE/image" || return 1
+	mkdir -p "$M"
 	cp -a "$STATE/image/usr/share/debian-livecd-installer/." "$M/" 2>/dev/null || true
 	umount -d "$STATE/image"
 }
