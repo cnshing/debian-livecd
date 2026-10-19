@@ -16,11 +16,6 @@ page_ask() {
 		value=$RET choices_c= choices= notes=$(text "$category" description)
 		for choice in $(choices "$category"); do
 			id=$category/$choice
-			reason=$(import_unavailable "$id")
-			if [ -n "$reason" ]; then
-				notes="$notes $(label "$id"): $reason"
-				continue
-			fi
 			choices_c="${choices_c:+$choices_c, }$choice"
 			choices="${choices:+$choices, }$(label "$id")"
 			[ -z "$(text "$id" description)" ] || notes="$notes $(label "$id"): $(text "$id" description)"
@@ -50,7 +45,7 @@ page_answers() {
 		db_get "debian-livecd-installer/$category"
 		for choice in $(choices "$category"); do
 			id=$category/$choice
-			if has "$choice" "$RET" && [ -z "$(import_unavailable "$id")" ]; then
+			if has "$choice" "$RET"; then
 				echo "$id" >> "$STATE/selected"
 			else
 				echo "$id" >> "$STATE/deselected"

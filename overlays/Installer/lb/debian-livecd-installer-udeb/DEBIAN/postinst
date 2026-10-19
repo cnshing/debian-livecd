@@ -16,7 +16,6 @@ LIB=/usr/lib/debian-livecd-installer
 . $LIB/manifest.sh
 . $LIB/page.sh
 . $LIB/requires.sh
-. $LIB/import.sh
 . $LIB/warn.sh
 . $LIB/exclude.sh
 
@@ -32,7 +31,6 @@ while :; do
 	page_answers
 	problems= warnings=
 	requires_check
-	import_check
 	warn_check
 	if [ -n "$problems" ]; then
 		if [ -z "$displayed" ]; then
