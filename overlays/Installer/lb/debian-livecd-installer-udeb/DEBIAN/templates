@@ -9,6 +9,11 @@ Choices: ${CHOICES}
 Description: ${HEADING}
  ${DESCRIPTION}
 
+Template: debian-livecd-installer/notes
+Type: text
+Description: ${HEADING}
+ ${DESCRIPTION}
+
 Template: debian-livecd-installer/requires
 Type: error
 Description: Invalid configuration
