@@ -1,1 +1,1 @@
-This feature, if enabled, will copy over all of RustDesk's settings onto the installed system, including its identity and permanent password.
+This feature, if enabled, will apply all of the live session RustDesk's settings onto the installed system, including its identity and permanent password. Uses the default settings when no live session is present.
