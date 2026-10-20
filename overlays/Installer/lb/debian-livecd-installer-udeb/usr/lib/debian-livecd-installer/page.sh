@@ -4,6 +4,11 @@
 # Note: We use this format to avoid a bug with cdebconf's GTK frontend as it either selects all or selects none for a multiselect (checkboxes call gtk_list_store_set on a GtkTreeStore)
 page_ask() {
 	displayed= shown= notes= choices_c= choices= value= tab=$(printf '\t')
+	# Use the screen resolution to manually calculate the word wrap.
+	# NOTE: about 6 pixels per character of DejaVu Sans 9, 15 between columns and 86 for the checkbox and margins
+	width=$(cut -d, -f1 /sys/class/graphics/fb0/virtual_size 2>/dev/null)
+	labels=$(for category in $(categories); do label "$category"; for choice in $(choices "$category"); do echo "$tab$(label "$category/$choice")"; done; done | awk -F "$tab" '{ if (length($1) > a) a = length($1); if (length($2) > b) b = length($2) } END { print a + b }')
+	width=$(( (${width:-800} - 116 - 6 * labels) / 6 ))
 	db_settitle debian-installer/debian-livecd-installer/title
 	for category in $(categories); do
 		q=debian-livecd-installer/$category
@@ -30,8 +35,8 @@ page_ask() {
 		for choice in $(choices "$category"); do
 			id=$category/$choice description=
 			if [ "$DEBIAN_FRONTEND" = gtk ]; then
-				# Word wrap descriptions at 45 characters estimated to fit 800x600.
-				description=$(text "$id" description | tr -d '\\' | awk -v t="$tab" '{ for (i = 1; i <= NF; i++) { if (l != "" && length(l $i) >= 45) { o = o l "\\n" t t; l = "" } l = l (l != "" ? " " : "") $i } printf "%s", o l }' | sed 's/,/\\\\,/g')
+				# Remove backslashes to prevent choice splitting on a comma, wrap the description to fit the width, indent new lines, and escape commas.
+				description=$(text "$id" description | tr -d '\\' | awk -v w="$width" -v t="$tab" '{ for (i = 1; i <= NF; i++) { if (l != "" && length(l $i) >= w) { o = o l "\\n" t t; l = "" } l = l (l != "" ? " " : "") $i } printf "%s", o l }' | sed 's/,/\\\\,/g')
 			elif [ -n "$(text "$id" description)" ]; then
 				# newt cuts the list at the screen's width, often 80 columns, so its descriptions go above the list
 				notes="$notes$(label "$id") - $(text "$id" description)\n"
