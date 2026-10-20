@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+
+# Puts debian-installer-launcher's "Install Debian" on the live user's desktop.
+install -D -m 755 /usr/share/applications/debian-installer-launcher.desktop /etc/skel/Desktop/debian-installer-launcher.desktop

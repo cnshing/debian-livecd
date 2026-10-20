@@ -1,2 +1,3 @@
 - sudo # Explicitly add sudo to prevent debian-installer from purging out of the system
 - os-prober # Lists other operating system to add to the grub menu  
+- debian-installer-launcher # Enables "Install Debian" on the live session
