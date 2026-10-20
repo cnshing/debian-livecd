@@ -4,14 +4,13 @@ Description: Select optional features
 
 Template: debian-livecd-installer/category
 Type: multiselect
+Description: The selected choices of one section of Select optional features
+
+Template: debian-livecd-installer/features
+Type: multiselect
 Choices-C: ${CHOICES-C}
 Choices: ${CHOICES}
-Description: ${HEADING}
- ${DESCRIPTION}
-
-Template: debian-livecd-installer/notes
-Type: text
-Description: ${HEADING}
+Description: Features to install:
  ${DESCRIPTION}
 
 Template: debian-livecd-installer/requires

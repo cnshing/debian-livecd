@@ -1,8 +1,9 @@
 # page.sh constructs the "Select optional features" page.
 
-# Shows a multiselect per section, from each choice's `label`, `description` and `default`. A choice gets its `default` the first time it is offered, unless its section was preseeded. Sets $displayed if the page was shown.
+# Shows one multiselect of every section's choices, each as "Section<TAB>Choice<TAB>Description" which cdebconf's `align` capability draws as columns. Each section's answer is kept in its own question, to allow preseeding.
+# Note: We use this format to avoid a bug with cdebconf's GTK frontend as it either selects all or selects none for a multiselect (checkboxes call gtk_list_store_set on a GtkTreeStore)
 page_ask() {
-	displayed= below= last= gap=$(printf '\302\240') # Add a no-break space, as cdebconf trims and values with just whitespace
+	displayed= shown= notes= choices_c= choices= value= tab=$(printf '\t')
 	db_settitle debian-installer/debian-livecd-installer/title
 	for category in $(categories); do
 		q=debian-livecd-installer/$category
@@ -13,43 +14,55 @@ page_ask() {
 			[ "$RET" != true ] || echo "$q" >> "$STATE/preseeded"
 		fi
 		db_get "$q"
-		value=$RET choices_c= choices= note=$(text "$category" description)
-		[ -z "$note" ] || note="$note\n"
+		section=$RET
 		for choice in $(choices "$category"); do
 			id=$category/$choice
-			choices_c="${choices_c:+$choices_c, }$choice"
-			choices="${choices:+$choices, }$(label "$id")"
-			[ -z "$(text "$id" description)" ] || note="$note$(label "$id") - $(text "$id" description)\n"
 			grep -qx "$id" "$STATE/offered" 2>/dev/null && continue
 			echo "$id" >> "$STATE/offered"
 			if [ "$(text "$id" default)" != false ] && ! grep -qx "$q" "$STATE/preseeded" 2>/dev/null; then
-				value="${value:+$value, }$choice"
+				section="${section:+$section, }$choice"
 			fi
 		done
-		[ -n "$choices_c" ] || continue
-		db_subst "$q" HEADING "$(label "$category")"
-		db_subst "$q" CHOICES-C "$choices_c"
-		db_subst "$q" CHOICES "$choices"
-		# Trick to make each description appear at the bottom of each section by placing them at the top of the next section.
-		[ "$DEBIAN_FRONTEND" = gtk ] || below=$note
-		page_describe "$q" "$below"
-		db_set "$q" "$value"
-		[ -z "$again" ] || db_fset "$q" seen false
-		if db_input high "$q"; then displayed=1 last=$note below=${note:-$gap}; fi
+		db_set "$q" "$section"
+		if [ -z "$again" ] && grep -qx "$q" "$STATE/preseeded" 2>/dev/null; then continue; fi
+		shown="$shown $category"
+		[ -z "$(text "$category" description)" ] || notes="$notes$(label "$category") - $(text "$category" description)\n"
+		for choice in $(choices "$category"); do
+			id=$category/$choice description=
+			if [ "$DEBIAN_FRONTEND" = gtk ]; then
+				# Word wrap descriptions at 45 characters estimated to fit 800x600.
+				description=$(text "$id" description | tr -d '\\' | awk -v t="$tab" '{ for (i = 1; i <= NF; i++) { if (l != "" && length(l $i) >= 45) { o = o l "\\n" t t; l = "" } l = l (l != "" ? " " : "") $i } printf "%s", o l }' | sed 's/,/\\\\,/g')
+			elif [ -n "$(text "$id" description)" ]; then
+				# newt cuts the list at the screen's width, often 80 columns, so its descriptions go above the list
+				notes="$notes$(label "$id") - $(text "$id" description)\n"
+			fi
+			choices_c="${choices_c:+$choices_c, }$id"
+			choices="${choices:+$choices, }$(label "$category")$tab$(label "$id")${description:+$tab$description}"
+			! has "$choice" "$section" || value="${value:+$value, }$id"
+		done
 	done
-	if [ "$DEBIAN_FRONTEND" = gtk ] && [ -n "$last" ]; then
-		page_describe debian-livecd-installer/notes "$last"
-		db_fset debian-livecd-installer/notes seen false
-		db_input high debian-livecd-installer/notes || true
-	fi
-	db_go
-}
-
-# Sets a question's DESCRIPTION. `escape` has cdebconf turn each \n into a line break and trim any other backslash.
-page_describe() {
-	db_capb backup escape
-	db_subst "$1" DESCRIPTION "$2"
-	db_capb backup
+	[ -n "$choices_c" ] || return 0
+	q=debian-livecd-installer/features
+	db_subst "$q" CHOICES-C "$choices_c"
+	# cdebconf converts each \n into a line break and removes the backslash of \x
+	db_capb backup align escape
+	db_subst "$q" CHOICES "$choices"
+	db_subst "$q" DESCRIPTION "$notes"
+	db_capb backup align
+	db_set "$q" "$value"
+	[ -z "$again" ] || db_fset "$q" seen false
+	if db_input high "$q"; then displayed=1; fi
+	db_go || return
+	# Splits the answer back into its sections' questions
+	db_get "$q"
+	value=$RET
+	for category in $shown; do
+		section=
+		for choice in $(choices "$category"); do
+			! has "$category/$choice" "$value" || section="${section:+$section, }$choice"
+		done
+		db_set "debian-livecd-installer/$category" "$section"
+	done
 }
 
 # Writes the answers to $STATE/selected and $STATE/deselected
