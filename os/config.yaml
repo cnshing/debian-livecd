@@ -64,3 +64,4 @@ overlays:
         - id: ghmbeldphafepmbegfdlkpapadhbakde
           name: Proton Pass
   Installer: {}
+  Installer+Calamares: {}
