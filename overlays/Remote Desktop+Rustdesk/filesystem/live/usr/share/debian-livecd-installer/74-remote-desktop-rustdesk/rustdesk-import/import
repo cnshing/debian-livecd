@@ -1,2 +1,0 @@
-~/.config/rustdesk # The live user's rustdesk configuration
-/root/.config/rustdesk # The system rustdesk service's configuration
