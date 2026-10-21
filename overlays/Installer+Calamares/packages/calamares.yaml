@@ -1,0 +1,10 @@
+- calamares 
+- calamares-settings-debian # For Debian's Calamares's step, branding, and "Install Debian" Launcher
+# Required dependencies for "Select optional features" page (features.qml).
+- qml6-module-qtquick
+- qml6-module-qtquick-controls
+- qml6-module-qtquick-layouts
+- qml6-module-qtquick-templates
+- qml6-module-qtquick-window
+- qml6-module-qtqml-workerscript
+- libxcb-cursor0 # Needed by Qt on X11, as Calamares runs as root on XWayland

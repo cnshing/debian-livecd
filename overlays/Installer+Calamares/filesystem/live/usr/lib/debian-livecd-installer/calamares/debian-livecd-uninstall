@@ -1,0 +1,23 @@
+#!/bin/sh
+# Calamares' counterpart of Debian Installer's live-installer debian-livecd-uninstall
+#   sh debian-livecd-uninstall TARGET SELECTED
+# TARGET is where the new system is mounted, and SELECTED the selected features.
+set -e
+TARGET=$1
+
+# Loads Debian Installer's functions, then Calamares' versions of those that differ
+LIB=/usr/lib/debian-livecd-installer
+for module in manifest page exclude prepare; do
+	. "$LIB/$module.sh"
+	[ ! -f "$LIB/calamares/$module.sh" ] || . "$LIB/calamares/$module.sh"
+done
+
+# Debian Installer does these three on its page
+manifest_load
+page_answers "$2"
+exclude_write
+
+exclude_delete_copied "$TARGET"
+uninstall_prepare "$TARGET"
+uninstall_run "$TARGET"
+uninstall_cleanup "$TARGET"
