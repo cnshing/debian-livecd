@@ -7,7 +7,8 @@ page_ask() {
 	# Use the screen resolution to manually calculate the word wrap.
 	# NOTE: about 7 pixels per character of DejaVu Sans 9 (bold labels take about 7.2, descriptions about 6.3), 15 between columns and 86 for the checkbox and margins
 	width=$(cut -d, -f1 /sys/class/graphics/fb0/virtual_size 2>/dev/null)
-	labels=$(for category in $(categories); do label "$category"; for choice in $(choices "$category"); do echo "$tab$(label "$category/$choice")"; done; done | awk -F "$tab" '{ if (length($1) > a) a = length($1); if (length($2) > b) b = length($2) } END { print a + b }')
+	# The longest section label and the longest choice label, the widths of the first two columns
+	labels=$(( $(cat "$M"/*/label 2>/dev/null | wc -L) + $(cat "$M"/*/*/label 2>/dev/null | wc -L) ))
 	width=$(( (${width:-800} - 116 - 7 * labels) / 7 ))
 	db_settitle debian-installer/debian-livecd-installer/title
 	for category in $(categories); do
@@ -35,8 +36,7 @@ page_ask() {
 		for choice in $(choices "$category"); do
 			id=$category/$choice description=
 			if [ "$DEBIAN_FRONTEND" = gtk ]; then
-				# Remove backslashes to prevent choice splitting on a comma, wrap the description to fit the width, indent new lines, and escape commas.
-				description=$(text "$id" description | tr -d '\\' | awk -v w="$width" -v t="$tab" '{ for (i = 1; i <= NF; i++) { if (l != "" && length(l $i) >= w) { o = o l "\\n" t t; l = "" } l = l (l != "" ? " " : "") $i } printf "%s", o l }' | sed 's/,/\\\\,/g')
+				description=$(text "$id" description | page_wrap)
 			elif [ -n "$(text "$id" description)" ]; then
 				# newt cuts the list at the screen's width, often 80 columns, so its descriptions go above the list
 				notes="$notes$(label "$id") - $(text "$id" description)\n"
@@ -68,6 +68,24 @@ page_ask() {
 		done
 		db_set "debian-livecd-installer/$category" "$section"
 	done
+}
+
+# Wraps a description, on stdin for d-i's GTK frontend using $width characters, each one after the first indented by two tabs into the description's column. 
+# Special processing for debconf separates choices with commas, so a comma is written as \\, which db_subst with `escape` reads as \. 
+#   A fast, GPU-accelerated terminal with tabs  ->  A fast\\, GPU-accelerated\n<TAB><TAB>terminal with tabs
+page_wrap() {
+	tr -d '\\' | awk -v width="$width" -v indent="$tab$tab" '{
+		for (i = 1; i <= NF; i++) {
+			if (line == "")
+				line = $i
+			else if (length(line " " $i) > width) {
+				out = out line "\\n" indent
+				line = $i
+			} else
+				line = line " " $i
+		}
+		printf "%s", out line
+	}' | sed 's/,/\\\\,/g'
 }
 
 # Writes the answers to $STATE/selected and $STATE/deselected

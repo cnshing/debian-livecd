@@ -1,11 +1,11 @@
 # When a choice is deselected, the `exclude` files ensure certain parts of the SquashFS filesystem are never included in the final installed system.
 
 
-# Copies what is excluded to $STATE/exclude as ./paths
+# Copies what is excluded to $STATE/exclude for tar: /usr/share/foo/ as ./usr/share/foo. Absolute paths or / are ignored.
 exclude_write() {
 	for id in $(cat "$STATE/deselected"); do
 		list "$M/$id/exclude"
-	done | sed -n 's|^/\(..*\)|./\1|p' | sort -u > "$STATE/exclude"
+	done | sed -n -e 's|/*$||' -e 's|^/|./|p' | sort -u > "$STATE/exclude"
 }
 
 # Deletes what is excluded from the new system at TARGET ($1)

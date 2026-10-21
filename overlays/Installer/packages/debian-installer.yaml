@@ -1,3 +1,4 @@
 - sudo # Explicitly add sudo to prevent debian-installer from purging out of the system
 - os-prober # Lists other operating system to add to the grub menu  
-- debian-installer-launcher # Enables "Install Debian" on the live session
+- yq # Reads the features' YAML at build time
+- python3-jsonschema # Validate feature.yaml and section.yaml

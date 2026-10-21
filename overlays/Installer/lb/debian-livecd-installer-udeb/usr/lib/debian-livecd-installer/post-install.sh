@@ -8,7 +8,7 @@ for script in "/root/install/hooks/post-install"/*.sh; do
     if [ -f "$script" ]; then
         SCRIPT_NAME=$(basename "$script" .sh)
         echo running /var/log/install/post-install-$SCRIPT_NAME.log 1>&2
-        in_target sh -c "cd / && sh $script 2>>/var/log/install/post-install-$SCRIPT_NAME.log >>/var/log/install/post-install-$SCRIPT_NAME.log"
+        in_target sh -c "cd / && sh $script 2>>/var/log/install/post-install-$SCRIPT_NAME.log >>/var/log/install/post-install-$SCRIPT_NAME.log" < /dev/null
     fi
 done
 }

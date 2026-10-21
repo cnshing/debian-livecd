@@ -1,8 +1,6 @@
 #!/bin/sh
 # Creates the main menu item for "Select optional features".
 
-# Looks up the configuration in `/usr/share/debian-livecd-installer` to generate the menu.
-
 # Any "invalid" configurations are met with an error, preventing the user from continuing.
 
 # Any "suspicious" configurations are met with a warning asking the user to confirm their choices.

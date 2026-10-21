@@ -15,7 +15,7 @@ for s in "$CHROOT/home/$DEFAULT_USER/install/hooks/user-post-install"/*.sh; do
         in_target touch $LOG_PATH
         in_target chown $DEFAULT_USER:$DEFAULT_USER $LOG_PATH
         echo running $SCRIPT_PATH 1>&2
-        in_target su $DEFAULT_USER -c "cd /home/$DEFAULT_USER && sh $SCRIPT_PATH 2>>$LOG_PATH >>$LOG_PATH"
+        in_target su $DEFAULT_USER -c "cd /home/$DEFAULT_USER && sh $SCRIPT_PATH 2>>$LOG_PATH >>$LOG_PATH" < /dev/null
     fi
 done
 }
