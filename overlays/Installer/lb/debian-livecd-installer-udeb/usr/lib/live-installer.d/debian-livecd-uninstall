@@ -7,20 +7,11 @@ set -e
 LIB=/usr/lib/debian-livecd-installer
 . $LIB/manifest.sh
 . $LIB/exclude.sh
+. $LIB/prepare.sh
 
-WORK=/target/tmp/debian-livecd-installer
 [ -f "$STATE/exclude" ] || exit 0
 
-exclude_delete_copied
-
-rm -rf "$WORK"
-mkdir -p "$WORK"
-cp -a "$STATE/manifest" "$STATE/deselected" "$WORK/"
-cp -a "$LIB" "$WORK/lib"
-if ! in-target sh /tmp/debian-livecd-installer/lib/uninstall.sh; then
-	db_subst debian-livecd-installer/uninstall-failed ERROR "$(tr '\n' ' ' < "$WORK/errors" 2>/dev/null)"
-	db_input critical debian-livecd-installer/uninstall-failed || true
-	db_go || true
-fi
-
-rm -rf "$WORK"
+exclude_delete_copied /target
+uninstall_prepare /target
+uninstall_run /target
+uninstall_cleanup /target

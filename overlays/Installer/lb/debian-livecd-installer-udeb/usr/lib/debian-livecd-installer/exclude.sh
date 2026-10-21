@@ -8,9 +8,10 @@ exclude_write() {
 	done | sed -n 's|^/\(..*\)|./\1|p' | sort -u > "$STATE/exclude"
 }
 
+# Deletes what is excluded from the new system at TARGET ($1)
 exclude_delete_copied() {
 	while read -r p; do
-		case $p in ./?*) rm -rf "/target/${p#./}" ;; esac
+		case $p in ./?*) rm -rf "$1/${p#./}" ;; esac
 	done < "$STATE/exclude"
 }
 

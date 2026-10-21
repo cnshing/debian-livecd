@@ -5,37 +5,13 @@ set -e
 
 LIB=/usr/lib/debian-livecd-installer
 . $LIB/manifest.sh
+. $LIB/page.sh
 . $LIB/import.sh
-
-# Logs what was and was not installed
-mkdir -p /target/var/log/installer/debian-livecd-installer
-cp -a "$STATE/selected" "$STATE/deselected" "$STATE/manifest" /target/var/log/installer/debian-livecd-installer/ 2>/dev/null || true
-
-user=$(debconf-get passwd/username || true)
-entry=
-if [ "$(debconf-get passwd/make-user || true)" != false ] && [ -n "$user" ]; then
-	entry=$(grep "^$user:" /target/etc/passwd || true)
-fi
-uid=$(echo "$entry" | cut -d: -f3)
-gid=$(echo "$entry" | cut -d: -f4)
-home=$(echo "$entry" | cut -d: -f6)
-
-import_copy
-
-# A failing hook does not fail any other hooks
-set +e
-export CHROOT=/target
-export DEFAULT_USER=
-[ -z "$entry" ] || DEFAULT_USER=$user
-mkdir -p $CHROOT/var/log/install
-
 . $LIB/post-install.sh
-if [ -n "$DEFAULT_USER" ]; then
-	. $LIB/user-post-install.sh
-	rm -rf $CHROOT/home/$DEFAULT_USER/install
-else
-	log "no user account, so the user-post-install hooks did not run"
-fi
+. $LIB/user-post-install.sh
 
-rm -rf $CHROOT/root/install
+page_log /target
+user_find /target
+import_copy /target
+post_install_hooks /target
 exit 0

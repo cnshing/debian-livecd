@@ -6,6 +6,8 @@ M=$STATE/manifest
 IMAGE=/cdrom/live/filesystem.squashfs
 
 log() { logger -t debian-livecd-installer "$*"; }
+# Runs a command inside the new system with Debian Installer's in-target.
+in_target() { in-target "$@"; }
 # Reads a file line by line, without comments and empty lines
 list() { sed -e 's/[[:space:]]*#.*//' -e '/^$/d' "$1" 2>/dev/null | awk '!seen[$0]++' || true; }
 # Reads a label as one line, without commas, as debconf separates choices with commas

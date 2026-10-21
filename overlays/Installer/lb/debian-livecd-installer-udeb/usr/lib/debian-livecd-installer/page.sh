@@ -86,3 +86,9 @@ page_answers() {
 		done
 	done
 }
+
+# Records what was selected and not selected, the manifest and state to $1/var/log/installer
+page_log() {
+	mkdir -p "$1/var/log/installer/debian-livecd-installer"
+	cp -a "$STATE/selected" "$STATE/deselected" "$STATE/manifest" "$1/var/log/installer/debian-livecd-installer/" 2>/dev/null || true
+}
