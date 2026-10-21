@@ -55,7 +55,9 @@ import_copy() {
 		fi
 		if [ -d "$snapshot/home" ] && [ -n "$home" ] && [ -d "$1$home" ]; then
 			import_copy_into "$snapshot/home" "$1$home"
+			# Continue safely if a file could not be copied and needs to be skipped
 			(cd "$snapshot/home" && find . -mindepth 1) | while read -r p; do
+				[ -e "$1$home/${p#./}" ] || [ -L "$1$home/${p#./}" ] || continue
 				chown -h "$uid:$gid" "$1$home/${p#./}"
 			done
 		elif [ -d "$snapshot/home" ]; then
