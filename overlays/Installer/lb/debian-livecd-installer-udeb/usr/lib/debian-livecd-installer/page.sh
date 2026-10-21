@@ -5,10 +5,10 @@
 page_ask() {
 	displayed= shown= notes= choices_c= choices= value= tab=$(printf '\t')
 	# Use the screen resolution to manually calculate the word wrap.
-	# NOTE: about 6 pixels per character of DejaVu Sans 9, 15 between columns and 86 for the checkbox and margins
+	# NOTE: about 7 pixels per character of DejaVu Sans 9 (bold labels take about 7.2, descriptions about 6.3), 15 between columns and 86 for the checkbox and margins
 	width=$(cut -d, -f1 /sys/class/graphics/fb0/virtual_size 2>/dev/null)
 	labels=$(for category in $(categories); do label "$category"; for choice in $(choices "$category"); do echo "$tab$(label "$category/$choice")"; done; done | awk -F "$tab" '{ if (length($1) > a) a = length($1); if (length($2) > b) b = length($2) } END { print a + b }')
-	width=$(( (${width:-800} - 116 - 6 * labels) / 6 ))
+	width=$(( (${width:-800} - 116 - 7 * labels) / 7 ))
 	db_settitle debian-installer/debian-livecd-installer/title
 	for category in $(categories); do
 		q=debian-livecd-installer/$category
