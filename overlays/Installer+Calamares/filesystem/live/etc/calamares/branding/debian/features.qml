@@ -156,7 +156,7 @@ Item {
             spacing: 14
 
             WrappedLabel {
-                text: "Choose the optional features to install. Everything else of the live system is always installed."
+                text: "Customize the optional features to install."
             }
 
             Repeater {
