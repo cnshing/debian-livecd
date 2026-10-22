@@ -13,55 +13,138 @@ import "features-model.js" as Model
 Item {
     id: page
 
-    readonly property var choices: Model.sections.reduce((all, section) => all.concat(section.choices), [])
-    readonly property var byId: { const m = {}; for (const c of choices) m[c.id] = c; return m }
-    // Whether each choice is checked, by id. Replaced on every change, so that the bindings update.
-    property var picked: { const m = {}; for (const c of choices) m[c.id] = c.checked; return m }
-
-    // The choice it is drawn under: the one choice it needs, when that is in the same section
-    function parentOf(c) {
-        const p = c.requires.length === 1 ? byId[c.requires[0]] : undefined
-        return p && p.id.split("/")[0] === c.id.split("/")[0] ? p : undefined
+    readonly property var choices: {
+        const all = []
+        for (const section of Model.sections)
+            all.push(...section.choices)
+        return all
     }
-    function depth(c) { let d = 0; for (let p = parentOf(c); p; p = parentOf(p)) d++; return d }
-    function available(c) { return c.requires.length < 2 || c.requires.some(r => picked[r]) }
-    // The labels of the sections whose choices the grayed out choices of a section need
+    readonly property var byId: {
+        const map = {}
+        for (const choice of choices)
+            map[choice.id] = choice
+        return map
+    }
+    // Whether each choice is checked, by id.
+    // Every change replaces the whole object, because QML notices when picked gets a new object, not when a key inside the same object changes.
+    property var picked: {
+        const map = {}
+        for (const choice of choices)
+            map[choice.id] = choice.checked
+        return map
+    }
+    // The checked choices, grouped under their section's label, with a section that has nothing checked left out instead of kept as an empty group
+    readonly property var checkedSections: {
+        const sections = []
+        for (const section of Model.sections) {
+            const checked = section.choices.filter(choice => picked[choice.id])
+            if (checked.length > 0)
+                sections.push({ label: section.label, choices: checked })
+        }
+        return sections
+    }
+    onCheckedSectionsChanged: config.packageChoice = answer(checkedSections)
+    Component.onCompleted: config.packageChoice = answer(checkedSections)
+
+    // The section that a choice belongs to, which is the first part of its id, everything before the "/"
+    function sectionOf(id) {
+        return id.split("/")[0]
+    }
+    // The one other choice that this choice depends on, or nothing when it needs none or one of several
+    function soleRequirement(choice) {
+        if (choice.requires.length !== 1)
+            return undefined
+        return byId[choice.requires[0]]
+    }
+    // The choice's parent in the tree of choices: the one other choice it needs when that is in the same section, otherwise nothing
+    function parentOf(choice) {
+        const required = soleRequirement(choice)
+        if (required && sectionOf(required.id) === sectionOf(choice.id))
+            return required
+        return undefined
+    }
+    // Follows step, a function that gives the next choice for a choice, from the given choice, and returns every choice it visits, in order.
+    // It stops when step gives nothing or a choice already in the list, so that choices that need each other in a loop do not make it go round forever.
+    function chain(choice, step) {
+        const list = [choice]
+        let link = step(choice)
+        while (link && !list.includes(link)) {
+            list.push(link)
+            link = step(link)
+        }
+        return list
+    }
+    function depth(choice) {
+        return chain(choice, parentOf).length - 1
+    }
+    // Whether a choice can be checked right now: it needs nothing or exactly one other choice, or it needs one of several and at least one of them is checked
+    function available(choice) {
+        return choice.requires.length < 2 || choice.requires.some(id => picked[id])
+    }
+    // The labels of the sections holding the choices that this section's unavailable choices are waiting for, each label once
     function needed(section) {
-        const labels = []
-        for (const c of section.choices.filter(c => !available(c)))
-            for (const r of c.requires) {
-                const s = Model.sections.find(s => s.id === r.split("/")[0])
-                if (s && !labels.includes(s.label)) labels.push(s.label)
+        const labels = new Set()
+        for (const choice of section.choices.filter(choice => !available(choice))) {
+            for (const id of choice.requires) {
+                const required = Model.sections.find(other => other.id === sectionOf(id))
+                if (required)
+                    labels.add(required.label)
             }
-        return labels
+        }
+        return Array.from(labels)
     }
 
-    function toggle(c, checked) {
+    function toggle(choice, checked) {
         const next = Object.assign({}, picked)
-        next[c.id] = checked
-        // Checking a choice checks what it needs, when that is one choice
-        for (let r = c; checked && r.requires.length === 1 && byId[r.requires[0]]; r = byId[r.requires[0]])
-            next[r.requires[0]] = true
-        // Unchecks the choices left without anything they need, until there are none
-        for (let changed = true; changed;) {
-            changed = false
-            for (const other of choices) {
-                if (next[other.id] && other.requires.length && !other.requires.some(r => next[r])) {
-                    next[other.id] = false
-                    changed = true
-                }
-            }
+        next[choice.id] = checked
+        // Checking a choice also checks what it cannot work without: the one choice it depends on, then the one that one depends on, and so on.
+        // It stops at a choice that needs nothing, at one that needs one of several because it cannot guess which, and at a choice it already checked, as when two choices need each other.
+        if (checked) {
+            for (const required of chain(choice, soleRequirement))
+                next[required.id] = true
+        }
+        // Unchecks every checked choice that needs something but has none of it checked, searching again after each, because unchecking one can leave another without what it needs
+        const unmet = other => next[other.id] && other.requires.length > 0 && !other.requires.some(id => next[id])
+        let stranded = choices.find(unmet)
+        while (stranded) {
+            next[stranded.id] = false
+            stranded = choices.find(unmet)
         }
         picked = next
     }
 
-    // Passes the checked choices, which Calamares also lists on its summary page, or "none": Calamares keeps no empty
-    // answer, and runs no command whose ${gs[...]} it does not have
-    function publish() {
-        config.packageChoice = choices.filter(c => picked[c.id]).map(c => c.id).join(",") || "none"
+    // Turns the checked sections into one string: "none" when nothing is checked, otherwise an invisible HTML comment with the ids written as ",a/x,b/y,", then a bullet for each section's label with its checked choices' labels as bullets under it.
+    // The inner lists set normal weight so that only the section labels are bold, and the outer list has no bottom margin, which removes a gap between the last section's label and its choices.
+    function answer(sections) {
+        if (sections.length === 0)
+            return "none"
+        let ids = ","
+        let list = ""
+        for (const section of sections) {
+            let items = ""
+            for (const choice of section.choices) {
+                ids += `${choice.id},`
+                items += `<li>${html(choice.label)}</li>`
+            }
+            list += `<li>${html(section.label)}<ul style="font-weight:normal">${items}</ul></li>`
+        }
+        return `<!--${ids}--><ul style="margin-bottom:0px">${list}</ul>`
     }
-    onPickedChanged: publish()
-    Component.onCompleted: publish()
+    // Turns text into HTML, replacing & < > and also ' and , with their codes, which still show as the same characters.
+    // That way the answer has no ' anywhere, and its only commas are the ones around the ids in its HTML comment.
+    function html(text) {
+        const codes = { "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", ",": "&#44;" }
+        let result = ""
+        for (const character of text)
+            result += codes[character] || character
+        return result
+    }
+
+    // A Label that fills the width of its column, and moves text that does not fit onto more lines, breaking between words
+    component WrappedLabel: Label {
+        Layout.fillWidth: true
+        wrapMode: Text.WordWrap
+    }
 
     ScrollView {
         id: scroll
@@ -72,9 +155,7 @@ Item {
             width: scroll.availableWidth
             spacing: 14
 
-            Label {
-                Layout.fillWidth: true
-                wrapMode: Text.WordWrap
+            WrappedLabel {
                 text: "Choose the optional features to install. Everything else of the live system is always installed."
             }
 
@@ -90,18 +171,14 @@ Item {
                         text: section.modelData.label
                         font.bold: true
                     }
-                    Label {
-                        Layout.fillWidth: true
+                    WrappedLabel {
                         visible: text !== ""
-                        wrapMode: Text.WordWrap
                         opacity: 0.7
                         text: section.modelData.description
                     }
-                    Label {
+                    WrappedLabel {
                         readonly property var needed: page.needed(section.modelData)
-                        Layout.fillWidth: true
                         visible: needed.length > 0
-                        wrapMode: Text.WordWrap
                         opacity: 0.7
                         font.italic: true
                         text: "Needs one of the " + needed.join(" or ") + "."
@@ -122,25 +199,21 @@ Item {
                             CheckBox {
                                 id: box
                                 text: item.modelData.label
-                                // The page sets checked, so that a click does not break its binding
+                                // A click does not check the box itself but asks the page to, because a box that checks itself loses its checked binding and stops following the page
                                 checkable: false
                                 checked: item.checked
                                 enabled: item.usable
                                 onClicked: page.toggle(item.modelData, !item.checked)
                             }
-                            Label {
-                                Layout.fillWidth: true
+                            WrappedLabel {
                                 Layout.leftMargin: item.textIndent
                                 visible: text !== ""
-                                wrapMode: Text.WordWrap
                                 opacity: item.usable ? 0.7 : 0.4
                                 text: item.modelData.description
                             }
-                            Label {
-                                Layout.fillWidth: true
+                            WrappedLabel {
                                 Layout.leftMargin: item.textIndent
                                 visible: !item.checked && item.modelData.warn !== ""
-                                wrapMode: Text.WordWrap
                                 color: "#9c6e03"
                                 text: item.modelData.warn
                             }
