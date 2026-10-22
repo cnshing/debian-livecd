@@ -1,5 +1,5 @@
 #!/bin/sh
-# Converts the overlay's optional features from /usr/share/deban-livecd-installer into a JSON manifest.
+# Converts the overlay's optional features from /usr/share/debian-livecd-installer into a JSON manifest.
 # live-build mounts its config folder at /live-build/config while chroot hooks are running.
 set -eu
 

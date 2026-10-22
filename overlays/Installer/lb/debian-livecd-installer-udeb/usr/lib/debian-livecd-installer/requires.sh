@@ -1,7 +1,7 @@
 # requires.sh validates each selected choice to detect any invalid configurations.
 
 
-# Printf $2 where $1 has %s, without changing  any other % or \ in $1
+# Printf $2 where $1 has %s, without changing any other % or \ in $1
 fill() { case $1 in *%s*) printf '%s\n' "${1%%%s*}$2${1#*%s}" ;; *) printf '%s\n' "$1" ;; esac; }
 
 # When a choice is selected without any of the choices in its `requires`, adds its `requiresWarn` to $warnings, otherwise an error from `requiresError` to $problems. Outputs $unmet for any choices whose requirements are not selected.

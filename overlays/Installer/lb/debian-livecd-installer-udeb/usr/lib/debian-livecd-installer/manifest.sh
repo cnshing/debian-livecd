@@ -1,4 +1,4 @@
-# A manifest represents all the available customization features for installation. The overlays write them as YAML in
+# A manifest represents all the available customization features for installation. 
 # These provide some functionality for debian-installer to retrieve manifest information using the shell.
 
 # "Global" "state" variables

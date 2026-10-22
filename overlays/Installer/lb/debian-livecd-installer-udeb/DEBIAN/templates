@@ -29,7 +29,7 @@ Description: Some deselected features could not be removed
  ${ERROR}
  .
  The installation continues with these parts of the live system still
- installed. See the installer's log, /var/log/installer/syslog on the installed system for more details.
+ installed. See the installer's log, /var/log/installer/syslog on the installed system, for more details.
 
 Template: live-installer/progress/debian-livecd-uninstall
 Type: text

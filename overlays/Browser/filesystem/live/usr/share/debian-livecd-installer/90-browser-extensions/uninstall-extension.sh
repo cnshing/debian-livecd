@@ -1,7 +1,7 @@
 # Sourced by the `deselect` scripts of the "Browser extensions" choices, see docs/installer.md.
-# Uninstalls any extension from Google Chrome, Firefox, and Ungoogled Chromium based off ID. No-op if no such ID exists for that particular browser.
+# Uninstalls any extension from Google Chrome, Firefox, and Ungoogled Chromium based on ID. No-op if no such ID exists for that particular browser.
 # uninstall_extension `ID` simply removes any `.crx`, `.json`, or `.xpi` files.
-# Safe operation to remove the extensions in this way in no profile exists yet.
+# Safe operation to remove the extensions in this way if no profile exists yet.
 
 uninstall_extension() {
 	for id in "$@"; do

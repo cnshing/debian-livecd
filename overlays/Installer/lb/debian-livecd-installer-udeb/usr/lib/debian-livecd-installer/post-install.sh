@@ -13,7 +13,7 @@ for script in "/root/install/hooks/post-install"/*.sh; do
 done
 }
 
-# Runs the user-post-install and post-install hooks (as the user that user_find found in the new system at in the new system at TARGET ($1). A failing hook does not fail any other hooks.
+# Runs the user-post-install and post-install hooks (as the user that user_find found) in the new system at TARGET ($1). A failing hook does not fail any other hooks.
 post_install_hooks() {
 	set +e
 	export CHROOT=$1

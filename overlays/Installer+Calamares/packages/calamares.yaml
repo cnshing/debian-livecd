@@ -1,5 +1,5 @@
 - calamares 
-- calamares-settings-debian # For Debian's Calamares's step, branding, and "Install Debian" Launcher
+- calamares-settings-debian # For Debian's Calamares steps, branding, and "Install Debian" Launcher
 # Required dependencies for "Select optional features" page (features.qml).
 - qml6-module-qtquick
 - qml6-module-qtquick-controls

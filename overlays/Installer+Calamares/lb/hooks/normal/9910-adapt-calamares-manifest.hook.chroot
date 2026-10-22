@@ -1,5 +1,5 @@
 #!/bin/sh
-# Entry point to adapts the manifest for Calamares
+# Entry point to adapt the manifest for Calamares
 
 set -eu
 

@@ -1,8 +1,8 @@
 // The "Select optional features" page of Calamares (see docs/installer.md).
 //
-// It shows a checkbox for every choice in /usr/share/debian-livecd-installer, from features-model.js, which the build writes with lb/debian-livecd-installer-build/adapter-feature-model.sh
+// It shows a checkbox for every choice in /usr/share/debian-livecd-installer, from features-model.js, which the build writes with lb/debian-livecd-installer-build/adapter-feature-model.sh.
 // Two rules keep the choices consistent while the page is shown:
-//  - Any choices that is dependent on another choice being enabled is placed as a tree, Automatically deselecting/enabling features for the subchoice.
+//  - Any choice that depends on another choice being enabled is placed as a tree, automatically deselecting/enabling features for the subchoice.
 //  - A choice that needs one of several others is grayed out if none of them are enabled.
 // NOTE: The below code is AI-generated.
 import QtQuick
@@ -181,7 +181,7 @@ Item {
                         visible: needed.length > 0
                         opacity: 0.7
                         font.italic: true
-                        text: "Requires one of the " + needed.join(" or ") + "to be enabled."
+                        text: "Requires one of the " + needed.join(" or ") + " to be enabled."
                     }
 
                     Repeater {

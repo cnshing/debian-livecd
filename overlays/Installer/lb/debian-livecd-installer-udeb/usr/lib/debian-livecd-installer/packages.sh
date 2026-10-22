@@ -8,7 +8,7 @@ packages_installed() {
 	done | awk '$1 == "installed" { print $2 }'
 }
 
-# Purges the packages of the deselected choices and autoremove the dependencies similarly to 14remove-live-packages.
+# Purges the packages of the deselected choices and autoremoves the dependencies similarly to 14remove-live-packages.
 packages_purge() {
 	purge=$(for id in $(cat "$STATE/deselected"); do packages_installed "$id"; done | sort -u)
 	[ -n "$purge" ] || return 0

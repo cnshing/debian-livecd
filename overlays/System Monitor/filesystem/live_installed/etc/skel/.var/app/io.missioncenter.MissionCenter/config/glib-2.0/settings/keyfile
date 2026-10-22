@@ -1,3 +1,3 @@
-# Mission Center is a Flatpak with no dconf access, use the GSettings keyfile.
+# Mission Center is a Flatpak with no dconf access, so use the GSettings keyfile.
 [io/missioncenter/MissionCenter]
 apps-page-merged-process-stats=true

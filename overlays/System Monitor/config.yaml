@@ -1,1 +1,1 @@
-flatpakAppId: io.missioncenter.MissionCenter # Mission Center only available by source or Flatpak
+flatpakAppId: io.missioncenter.MissionCenter # Mission Center is only available by source or Flatpak

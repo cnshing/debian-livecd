@@ -1,7 +1,7 @@
 #!/bin/sh
-# A script to succesfully install system-wide Flatpak apps for headless chroot
+# A script to successfully install system-wide Flatpak apps for headless chroot
 
-# Flatpak relies on bwrap to process `apply_extra` for apps with `extra-data`, which requires a user namespace that a chroot environment refuses to create, and a mount point on '/'. Instead, pivot_root'ed into a bind mount of this chroot in a privately mounted namespace. Only an unchrooted process can pivot_root, requiring us to escape the chroot environment into /proc/1/root.
+# Flatpak relies on bwrap to process `apply_extra` for apps with `extra-data`, which requires a user namespace that a chroot environment refuses to create, and a mount point on '/'. Instead, it pivot_roots into a bind mount of this chroot in a privately mounted namespace. Only an unchrooted process can pivot_root, requiring us to escape the chroot environment into /proc/1/root.
 
 
 set -eu

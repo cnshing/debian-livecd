@@ -1,5 +1,5 @@
 label: GNOME Remote Desktop (RDP)
 description: |
-  Turns on GNOME's built in remote desktop via RDP.
+  Turns on GNOME's built-in remote desktop via RDP.
 exclude:
   - /etc/dconf/db/desktop.d/02-gnome-rdp
