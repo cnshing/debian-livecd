@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Enable Launching Install Debian (Calamares)
+Comment=Trusts the Install Debian desktop icon for DING
+# touch makes Desktop Icons NG redraws the icon to visually show it as trusted
+Exec=sh -c "cd \\$HOME/Desktop && gio set calamares-install-debian.desktop metadata::trusted true && touch calamares-install-debian.desktop"
+NoDisplay=true
+X-GNOME-Autostart-Phase=Initialization
