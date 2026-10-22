@@ -22,4 +22,5 @@ feature:
     packages: { type: array, items: { type: string }, default: [] }
     exclude: { type: array, items: { type: string }, default: [] }
     import: { type: array, items: { type: string }, default: [] }
-    deselect: { type: string, default: "" }
+    # The name of the feature's script, which the installer keeps in a file named deselect, so the script cannot have that name itself
+    deselect: { type: string, default: "", not: { const: deselect } }

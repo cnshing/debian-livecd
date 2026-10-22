@@ -3,6 +3,6 @@
 deselect_run() {
 	for id in $(cat "$STATE/deselected"); do
 		[ -f "$M/$id/deselect" ] || continue
-		sh -e "$M/$id/deselect" || error "The removal deselection script of $id failed."
+		sh -e "$M/$id/$(text "$id" deselect)" || error "The removal deselection script of $id failed."
 	done
 }
