@@ -181,7 +181,7 @@ Item {
                         visible: needed.length > 0
                         opacity: 0.7
                         font.italic: true
-                        text: "Needs one of the " + needed.join(" or ") + "."
+                        text: "Requires one of the " + needed.join(" or ") + "to be enabled."
                     }
 
                     Repeater {
