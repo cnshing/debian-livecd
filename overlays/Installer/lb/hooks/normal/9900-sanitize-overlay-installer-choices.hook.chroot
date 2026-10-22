@@ -40,14 +40,19 @@ leave_out() {
 for id in $(features); do
 	present "$id" || leave_out "$id" "not in this image"
 done
-# Removes features whose requirements are not in the image
-for id in $(features); do
-	required=$(get "$id" requires)
-	[ -n "$required" ] || continue
-	for r in $required; do
-		features | grep -qxF "$r" && continue 2
+# Removes each feature whose `requires` names only features that are no longer in the manifest, and repeats until a pass removes nothing, because each removal can take away what another feature requires
+left=1
+while [ -n "$left" ]; do
+	left=
+	for id in $(features); do
+		required=$(get "$id" requires)
+		[ -n "$required" ] || continue
+		for r in $required; do
+			features | grep -qxF "$r" && continue 2
+		done
+		leave_out "$id" "what it needs is not in this image"
+		left=1
 	done
-	leave_out "$id" "what it needs is not in this image"
 done
 # Removes sections that are left empty
 for id in $(jq -r '.sections[] | select(.features == []) | .id' "$J"); do
