@@ -28,15 +28,16 @@ overlays:
   Text Editor: {}
   Video Player: {}
   Audio Effects: {}
-  Battery Management:
-    charging: performance
-    profiles:
-      performance:
-        start: 41
-        end: 100
-      power-saver:
-        start: 0
-        end: 40
+  # Simple battery management rules can lead to thermal/power issues for some users - enable this only if you know what you are doing
+  # Battery Management:
+  #   charging: performance
+  #   profiles:
+  #     performance:
+  #       start: 41
+  #       end: 100
+  #     power-saver:
+  #       start: 0
+  #       end: 40
   Battery Management+NVIDIA Optimus: {}
   Remote Desktop: {}
   Remote Desktop+Parsec: {}
