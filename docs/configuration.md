@@ -14,7 +14,7 @@ Ideally, there should be an application that automatically applies an [AutoEQ](h
 
 ## Battery Management
 
-[TLP](https://github.com/linrunner/TLP) will be used to optimize battery with performance. Preferentially, any laptop devices should use full computing power when charging and switch to power-saving mode within `0%` - `40%` battery thresholds.
+[TLP](https://github.com/linrunner/TLP) will be used to optimize battery with performance. Preferentially, any laptop devices can be configured to use full computing power when charging and switch to power-saving mode within `0%` - `40%` battery thresholds.
 
 However, any power or battery settings manually changed by the user should take precedence for the session.
 
