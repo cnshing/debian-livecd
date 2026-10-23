@@ -1,0 +1,7 @@
+#!/bin/sh
+# Hook entrypoint to build out the debian-installer manifest
+set -eu
+
+[ -f /var/lib/debian-livecd-installer/manifest.json ] || exit 0
+sh /live-build/config/debian-livecd-installer-build/adapter-debian-installer.sh \
+	/var/lib/debian-livecd-installer/manifest.json /usr/share/debian-livecd-installer /var/lib/debian-livecd-installer/manifest

@@ -48,10 +48,5 @@ if ! apt-get install -y "$TMP_DEB"; then
     exit 1
 fi
 
-echo "[RustDesk] ==> Enabling systemd service..."
-if ! systemctl enable rustdesk; then
-    echo "[RustDesk] ==> ERROR: Failed to enable rustdesk service" >&2
-    exit 1
-fi
 
 echo "[RustDesk] ==> Installed successfully"

@@ -1,0 +1,17 @@
+#!/bin/sh
+# When the SquashFS filesystem is copied to /target, this script will run as one final check to manually uninstall any of the deselected choices as a second pass in case our previous attempt failed.
+
+set -e
+. /usr/share/debconf/confmodule
+
+LIB=/usr/lib/debian-livecd-installer
+. $LIB/manifest.sh
+. $LIB/exclude.sh
+. $LIB/prepare.sh
+
+[ -f "$STATE/exclude" ] || exit 0
+
+exclude_delete_copied /target
+uninstall_prepare /target
+uninstall_run /target
+uninstall_cleanup /target

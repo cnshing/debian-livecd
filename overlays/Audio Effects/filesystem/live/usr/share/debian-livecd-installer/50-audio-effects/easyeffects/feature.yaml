@@ -1,0 +1,4 @@
+label: EasyEffects
+packages:
+  - easyeffects
+  - lsp-plugins-lv2

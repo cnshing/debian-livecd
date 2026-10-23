@@ -1,0 +1,40 @@
+Template: debian-installer/debian-livecd-installer/title
+Type: text
+Description: Select optional features
+
+Template: debian-livecd-installer/category
+Type: multiselect
+Description: The selected choices of one section of Select optional features
+
+Template: debian-livecd-installer/features
+Type: multiselect
+Choices-C: ${CHOICES-C}
+Choices: ${CHOICES}
+Description: Features to install:
+ ${DESCRIPTION}
+
+Template: debian-livecd-installer/requires
+Type: error
+Description: Invalid configuration
+ ${ERRORS}
+
+Template: debian-livecd-installer/warning
+Type: note
+Description: Are you sure you want to do that?
+ ${WARNINGS}
+
+Template: debian-livecd-installer/uninstall-failed
+Type: error
+Description: Some deselected features could not be removed
+ ${ERROR}
+ .
+ The installation continues with these parts of the live system still
+ installed. See the installer's log, /var/log/installer/syslog on the installed system, for more details.
+
+Template: live-installer/progress/debian-livecd-uninstall
+Type: text
+Description: Removing deselected features...
+
+Template: finish-install/progress/post-install-hooks
+Type: text
+Description: Copying configuration from the live session...

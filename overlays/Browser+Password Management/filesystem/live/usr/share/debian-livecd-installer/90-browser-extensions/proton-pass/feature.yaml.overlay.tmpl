@@ -1,0 +1,8 @@
+label: Proton Pass
+description: |
+  See https://proton.me/pass
+requires:
+{% for browser, exts in overlay.config.extensions.items() if exts | selectattr("name", "equalto", "Proton Pass") | list %}
+  - 80-browsers/{{ browser }}
+{% endfor %}
+deselect: deselect.sh

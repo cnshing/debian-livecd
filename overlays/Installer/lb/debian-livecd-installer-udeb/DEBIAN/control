@@ -1,0 +1,10 @@
+Package: debian-livecd-installer
+Package-Type: udeb
+Version: 1
+Architecture: all
+Priority: standard
+Section: debian-installer
+Maintainer: debian-livecd <chan.shing@protonmail.com>
+Depends: cdebconf-udeb
+Installer-Menu-Item: 3400
+Description: Select optional features of the live system for installation

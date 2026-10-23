@@ -2,6 +2,7 @@ distribution: trixie
 lb:
   aptRecommends: true
   aptOptions: "-y -o APT::Default-Release=trixie" # NOTE: Default release should be the same as distribution
+  archiveAreas: main contrib non-free non-free-firmware
   win32Loader: false # win32-loader not supported on trixie distributions 
   bootappendLive: boot=live components username=live locales=en_US.UTF-8 keyboard-layouts=us copy-live-medium-files=RustDesk.toml,RustDesk2.toml # copy-live-medium-files: files copied off the boot drive's root before toram, for RustDesk's /run/live/medium/ configPaths
 overlays:
@@ -11,7 +12,7 @@ overlays:
   Desktop Environment+Shell: {}
   Desktop Environment+Tweaks: {}
   Desktop Environment+Phone Sync: {}
-  Desktop Environment+System Monitor: {}
+  System Monitor: {}
   Desktop Environment+Window Tiling: {}
   Desktop Environment+Theming:
     whitesur: # See overlays/Desktop Environment+Theming/config.yaml for documentation
@@ -20,7 +21,7 @@ overlays:
       opacity: solid
       macWindowButtons: false
   Desktop Environment+Thumbnailers: {}
-  Desktop Environment+Image Viewer: {}
+  Image Viewer: {}
   Terminal: {}
   Display Manager: {}
   File Manager: {}
@@ -28,13 +29,10 @@ overlays:
   Video Player: {}
   Audio Effects: {}
   Remote Desktop: {}
+  Remote Desktop+Parsec: {}
   Miscellaneous+Load to RAM: {}
   Miscellaneous+Virtualization: {}
-  Flatpaks:
-    packages:
-      - com.parsecgaming.parsec
-      - it.mijorus.gearlever # AppImages
-      - io.missioncenter.MissionCenter # System Monitor
+  Flatpaks: {} # Required for AppImages, System Monitor, and Parsec
   AppImages:
     appImageHomeDir: AppImages
   Remote Desktop+Rustdesk:
@@ -66,3 +64,5 @@ overlays:
           name: Bitwarden
         - id: ghmbeldphafepmbegfdlkpapadhbakde
           name: Proton Pass
+  Installer: {}
+  Installer+Calamares: {}

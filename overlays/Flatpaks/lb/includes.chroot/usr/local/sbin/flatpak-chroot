@@ -1,0 +1,36 @@
+#!/bin/sh
+# A script to successfully install system-wide Flatpak apps for headless chroot
+
+# Flatpak relies on bwrap to process `apply_extra` for apps with `extra-data`, which requires a user namespace that a chroot environment refuses to create, and a mount point on '/'. Instead, it pivot_roots into a bind mount of this chroot in a privately mounted namespace. Only an unchrooted process can pivot_root, requiring us to escape the chroot environment into /proc/1/root.
+
+
+set -eu
+
+if [ "${1:-}" != install ] || [ $# -lt 2 ]; then
+    echo "usage: flatpak-chroot install ID..." >&2
+    exit 2
+fi
+
+if [ -z "${FLATPAK_CHROOT_PIVOTED:-}" ]; then
+    export FLATPAK_CHROOT_PIVOTED=1
+    exec 9< / # The build host only knows this chroot by its path there
+    exec chroot /proc/1/root /bin/sh -euc '
+        pivot=$1
+        shift
+        exec unshare --mount --propagation private /bin/sh -euc "${pivot}" pivot "$(readlink /proc/self/fd/9)" "$@" 9<&-
+    ' escape '
+        mount --rbind "$1" "$1"
+        cd "$1"
+        shift
+        pivot_root . mnt
+        umount -l /mnt
+        exec "$@"
+    ' "$0" "$@"
+fi
+shift
+
+trap 'rm -rf /var/tmp/flatpak-cache-* /root/.cache/flatpak /root/.local/share/flatpak' EXIT
+
+flatpak --system remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+flatpak --system install -y --noninteractive flathub "$@"
+flatpak --system update --appstream -y

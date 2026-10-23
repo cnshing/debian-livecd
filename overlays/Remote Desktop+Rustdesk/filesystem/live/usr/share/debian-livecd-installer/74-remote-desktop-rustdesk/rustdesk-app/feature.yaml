@@ -1,0 +1,5 @@
+label: RustDesk
+packages:
+  - rustdesk-unattended-wayland # Special RustDesk package name as the unattended feature in Wayland is in beta
+exclude:
+  - /usr/lib/systemd/system/rustdesk.service # Manually remove the RustDesk service as systemd fails to do so in an installer environment where systemd is not PID 1

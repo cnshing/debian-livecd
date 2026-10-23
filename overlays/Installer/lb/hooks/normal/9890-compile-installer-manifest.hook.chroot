@@ -1,0 +1,9 @@
+#!/bin/sh
+# Converts the overlay's optional features from /usr/share/debian-livecd-installer into a JSON manifest.
+# live-build mounts its config folder at /live-build/config while chroot hooks are running.
+set -eu
+
+[ -d /usr/share/debian-livecd-installer ] || exit 0
+mkdir -p /var/lib/debian-livecd-installer
+sh /live-build/config/debian-livecd-installer-build/manifest-json.sh /usr/share/debian-livecd-installer \
+	> /var/lib/debian-livecd-installer/manifest.json

@@ -2,4 +2,9 @@
 
 set -e
 
+# Upstream apt-mirror-setup fix from https://salsa.debian.org/live-team/live-build/-/commit/82788ada
+for f in /usr/share/live/build/data/debian-cd/trixie/udeb_exclude /usr/share/live/build/data/debian-cd/forky/udeb_exclude; do
+    [ ! -f "$f" ] || sed -i '/^apt-mirror-setup$/d' "$f"
+done
+
 lb build noauto "${@}" 2>&1 | tee build.log

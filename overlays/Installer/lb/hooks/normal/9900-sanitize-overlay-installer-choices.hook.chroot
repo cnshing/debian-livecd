@@ -1,0 +1,73 @@
+#!/bin/sh
+# Some overlays supporting debian-installer implicitly require another overlay to be enabled in order to function correctly. This script checks the features in the compiled manifest, for any developer overlay misconfigurations against this image.
+set -u
+
+J=/var/lib/debian-livecd-installer/manifest.json
+[ -f "$J" ] || exit 0
+trap 'rm -f "$J.new"' EXIT
+
+warn() { echo "[Installer] ==> WARNING: $*" >&2; }
+# Every feature's id
+features() { jq -r '.sections[].features[].id' "$J"; }
+# A feature's ($1) key ($2): a list one item per line, or a text
+get() {
+	jq -r --arg id "$1" --arg key "$2" \
+		'.sections[].features[] | select(.id == $id) | .[$key] | if type == "array" then .[] else . end' "$J"
+}
+# Changes the manifest with a jq filter ($1), given the jq arguments after it
+edit() { filter=$1; shift; jq "$@" "$filter" "$J" > "$J.new" && mv "$J.new" "$J"; }
+exists() { [ -e "$1" ] || [ -L "$1" ]; }
+# Lists the installed packages matching the names or globs on stdin
+installed() {
+	while read -r p; do
+		dpkg-query -W -f '${db:Status-Status} ${Package}\n' "$p" 2> /dev/null
+	done | awk '$1 == "installed" { print $2 }' | sort -u
+}
+
+present() {
+	[ -z "$(get "$1" packages | installed)" ] || return 0
+	while read -r p; do [ -n "$p" ] && exists "$p" && return 0; done << EOF
+$(get "$1" exclude)
+EOF
+	[ -n "$(get "$1" import)" ] || [ -n "$(get "$1" deselect)" ]
+}
+
+leave_out() {
+	echo "[Installer] ==> $1: $2, left out"
+	edit 'del(.sections[].features[] | select(.id == $id))' --arg id "$1"
+}
+# Removes features with nothing in the image
+for id in $(features); do
+	present "$id" || leave_out "$id" "not in this image"
+done
+# Removes each feature whose `requires` names only features that are no longer in the manifest, and repeats until a pass removes nothing, because each removal can take away what another feature requires
+left=1
+while [ -n "$left" ]; do
+	left=
+	for id in $(features); do
+		required=$(get "$id" requires)
+		[ -n "$required" ] || continue
+		for r in $required; do
+			features | grep -qxF "$r" && continue 2
+		done
+		leave_out "$id" "what it needs is not in this image"
+		left=1
+	done
+done
+# Removes sections that are left empty
+for id in $(jq -r '.sections[] | select(.features == []) | .id' "$J"); do
+	echo "[Installer] ==> $id: nothing to choose, left out"
+done
+edit 'del(.sections[] | select(.features == []))'
+
+# Warns about the packages and excluded paths of a feature that are not in the image, without failing the build.
+# `exclude` is for files that hooks or filesystem/ add, not files of packages, so it is not checked against dpkg.
+for id in $(features); do
+	get "$id" packages | while read -r p; do
+		[ -n "$(echo "$p" | installed)" ] || warn "$id: no installed package $p"
+	done
+	get "$id" exclude | while read -r p; do
+		exists "$p" || warn "$id: no $p"
+	done
+	echo "[Installer] ==> $id: checked"
+done

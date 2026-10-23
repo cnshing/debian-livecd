@@ -1,1 +1,2 @@
-appImageHomeDir: AppImages # Where the .AppImage files are stored resolved to ~/{{ appImageHomeDir }}
+appImageHomeDir: AppImages # Where the .AppImage files are stored, resolved to ~/{{ appImageHomeDir }}
+flatpakAppId: it.mijorus.gearlever # GearLever is only available by source or Flatpak

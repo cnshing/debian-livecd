@@ -1,0 +1,26 @@
+# Manifest schema
+section:
+  type: object
+  additionalProperties: false
+  required: [label]
+  properties:
+    label: { type: string, pattern: '\S' }
+    description: { type: string, default: "" }
+    requiresError: { type: string, default: "" }
+feature:
+  type: object
+  additionalProperties: false
+  required: [label]
+  properties:
+    label: { type: string, pattern: '\S' }
+    description: { type: string, default: "" }
+    default: { type: boolean, default: true }
+    warn: { type: string, default: "" }
+    requires: { type: array, items: { type: string }, default: [] }
+    requiresWarn: { type: string, default: "" }
+    requiresError: { type: string, default: "" }
+    packages: { type: array, items: { type: string }, default: [] }
+    exclude: { type: array, items: { type: string }, default: [] }
+    import: { type: array, items: { type: string }, default: [] }
+    # The name of the feature's script, which the installer keeps in a file named deselect, so the script cannot have that name itself
+    deselect: { type: string, default: "", not: { const: deselect } }

@@ -1,0 +1,4 @@
+- sudo # Explicitly add sudo to prevent debian-installer from purging out of the system
+- os-prober # Lists other operating systems to add to the grub menu  
+- yq # Reads the features' YAML at build time
+- python3-jsonschema # Validates feature.yaml and section.yaml

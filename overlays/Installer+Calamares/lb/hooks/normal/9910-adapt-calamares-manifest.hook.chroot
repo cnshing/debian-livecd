@@ -1,0 +1,12 @@
+#!/bin/sh
+# Entry point to adapt the manifest for Calamares
+
+set -eu
+
+# Calamares reuses Debian Installer's functions, next to Calamares' versions in /usr/lib/debian-livecd-installer/calamares.
+# live-build mounts its config folder at /live-build/config while chroot hooks are running.
+cp -r /live-build/config/debian-livecd-installer-udeb/usr/lib/debian-livecd-installer/. /usr/lib/debian-livecd-installer/
+
+[ -f /var/lib/debian-livecd-installer/manifest.json ] || exit 0
+sh /live-build/config/debian-livecd-installer-build/adapter-feature-model.sh /var/lib/debian-livecd-installer/manifest.json \
+	> /etc/calamares/branding/debian/features-model.js

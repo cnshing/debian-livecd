@@ -1,0 +1,5 @@
+label: Browser extensions
+description: |
+  Each selected browser will contain the features:
+requiresError: |
+  You have requested %s without any installed browsers. Please select a browser(s) or disable all of the browser extensions.

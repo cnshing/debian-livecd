@@ -1,0 +1,17 @@
+#!/bin/sh
+# After `user-setup`, this will copy any of the selected choices' `import` file paths over to the installed system and run the overlays' post-install and user-post-install hooks.
+
+set -e
+
+LIB=/usr/lib/debian-livecd-installer
+. $LIB/manifest.sh
+. $LIB/page.sh
+. $LIB/import.sh
+. $LIB/post-install.sh
+. $LIB/user-post-install.sh
+
+page_log /target
+user_find /target
+import_copy /target
+post_install_hooks /target
+exit 0

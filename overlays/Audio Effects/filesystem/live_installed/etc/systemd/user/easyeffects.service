@@ -4,6 +4,8 @@ PartOf=graphical-session.target
 After=graphical-session.target
 # Skip system users, e.g. the GDM greeter
 ConditionUser=!@system
+# Only start the service if EasyEffects is installed
+ConditionFileIsExecutable=/usr/bin/easyeffects
 
 [Service]
 ExecStart=/usr/bin/easyeffects --gapplication-service

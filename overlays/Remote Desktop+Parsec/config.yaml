@@ -1,0 +1,1 @@
+flatpakAppId: com.parsecgaming.parsec # Parsec's own .deb dependencies are outdated, requiring Flatpak's isolated runtime

@@ -1,0 +1,4 @@
+label: Firefox ESR
+packages:
+  - firefox-esr
+  - webext-ublock-origin-firefox # Extension with Firefox

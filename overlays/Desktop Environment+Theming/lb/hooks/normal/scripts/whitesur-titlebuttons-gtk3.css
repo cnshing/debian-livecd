@@ -1,7 +1,7 @@
 
 /* Replaces WhiteSur's PNG window buttons with GNOME-style symbolic window buttons for GTK 3.
  * Adapted from Colloid's "normal" window buttons (vinceliuice/Colloid-gtk-theme, --tweaks normal),
- * with Colloid's fixed light-theme colours swapped for currentColor so one file fits light and dark.
+ * with Colloid's fixed light-theme colors swapped for currentColor so one file fits light and dark.
 */
 button.titlebutton:not(.suggested-action):not(.destructive-action) {
   min-height: calc(22px * 1.2); /* Special change to increase button size */

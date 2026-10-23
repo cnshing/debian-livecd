@@ -1,0 +1,2 @@
+. /usr/share/debian-livecd-installer/90-browser-extensions/uninstall-extension.sh
+uninstall_extension{% for exts in overlay.config.extensions.values() %}{% for ext in exts if ext.name == "Bitwarden" %} "{{ ext.id }}"{% endfor %}{% endfor %}

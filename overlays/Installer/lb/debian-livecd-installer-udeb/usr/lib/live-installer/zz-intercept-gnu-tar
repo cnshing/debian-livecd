@@ -1,0 +1,4 @@
+# Sourced last by live-installer, and intercepts tar so that it redirects to GNU tar, which supports our exclude feature.
+
+. /usr/lib/debian-livecd-installer/exclude.sh
+exclude_intercept_tar

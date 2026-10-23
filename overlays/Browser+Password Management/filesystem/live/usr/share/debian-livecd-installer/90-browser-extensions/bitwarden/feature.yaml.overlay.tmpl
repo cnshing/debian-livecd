@@ -1,0 +1,8 @@
+label: Bitwarden
+description: |
+  See https://bitwarden.com
+requires:
+{% for browser, exts in overlay.config.extensions.items() if exts | selectattr("name", "equalto", "Bitwarden") | list %}
+  - 80-browsers/{{ browser }}
+{% endfor %}
+deselect: deselect.sh
