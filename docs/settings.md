@@ -211,9 +211,6 @@ Reference: [`config.yaml`](../overlays/Battery%20Management/config.yaml), [`conf
 
 The [Hybrid graphics configuration](configuration.md#hybrid-graphics) adds **GNOME (Integrated Graphics)** and **GNOME (Dedicated Graphics)** to GDM's session chooser, configuring Mutter to render the session using those devices. It assumes an pre-existing working graphics driver to function properly.
 
-
-You will switcheroo-control 3 or newer for the session choose to properly distinguish which device is Dedicated or Integrated. 
-
 Install the dependencies and refresh GPU classification:
 
 ```bash
@@ -259,9 +256,23 @@ cards() {
         while read -r render; do
             [ -n "$render" ] || continue
 
+            # Based on testing, the earlier boot/non-boot fallback seems sufficient for now.
+            # TODO: Uncomment below and switch to tag-only classification once Debian stable switcheroo-control >= 3.0.
+            # discrete=0
+            # case $(udevadm info --query=property --path="$render" 2>/dev/null | prop CURRENT_TAGS) in
+            #     *:switcheroo-discrete-gpu:*) discrete=1 ;;
+            # esac
+
             discrete=0
             case $(udevadm info --query=property --path="$render" 2>/dev/null | prop CURRENT_TAGS) in
                 *:switcheroo-discrete-gpu:*) discrete=1 ;;
+                *)
+                    # shortcut: boot/non-boot is not universal GPU classification; replace this fallback at the TODO above.
+                    if [ ! -e /usr/lib/udev/rules.d/30-discrete-gpu.rules ] &&
+                        [ "$(cat "$render/device/boot_vga" 2>/dev/null || true)" != 1 ]; then
+                        discrete=1
+                    fi
+                    ;;
             esac
             [ "$discrete" = "$want_discrete" ] || continue
 
