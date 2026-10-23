@@ -1,6 +1,246 @@
 # Settings
 
-The following document contains more detailed reproducible application settings and instructions to replicate some of the desired [configuration](configuration.md) of the liveCD.
+This document provides commands and application settings to reproduce the liveCD's [configuration](configuration.md) on an installed system. Follow each section's instructions directly; custom file contents are included so you can create them without a checkout of this repository.
+
+The references identify the source files used by the build. When developers or coding assistants change those files, update the corresponding commands and embedded contents here so following the instructions produces identical files. Keep each section's references after its setup and verification instructions.
+
+## Battery Management
+
+### Hybrid graphics
+
+The [Hybrid graphics configuration](configuration.md#hybrid-graphics) adds **GNOME (Integrated Graphics)** and **GNOME (Dedicated Graphics)** to GDM's session chooser, configuring Mutter to render the session using those devices. It assumes an pre-existing working graphics driver to function properly.
+
+
+You will switcheroo-control 3 or newer for the session choose to properly distinguish which device is Dedicated or Integrated. 
+
+Install the dependencies and refresh GPU classification:
+
+```bash
+sudo apt update
+sudo apt install switcheroo-control pkexec
+sudo udevadm control --reload
+sudo udevadm trigger --action=change --subsystem-match=drm
+sudo udevadm settle
+sudo systemctl restart switcheroo-control
+```
+
+Write the script that selects Mutter's primary GPU:
+
+```bash
+sudo mkdir -p /usr/local/bin
+sudo tee /usr/local/bin/set-primary-gpu <<'EOF'
+#!/bin/sh
+# Override Mutter's primary gpu selection with 'dedicated' and 'integrated' gpus.
+
+# Mutter has its own method for selecting a GPU at compositor startup. The script leverages a `mutter-device-preferred-primary` udev tag to override this selection. See udev tag in CURRENT_TAGS; see meta-udev.c:125, meta-backend-native.c:536, and meta-renderer-native.c:2346.
+
+# We select the first "dedicated" and non-dedicated("integrated") device in switcheroo-control's libudev enumeration order, where it is considered "dedicated" if the DRM render nodes are assigned a "switcheroo-discrete-gpu" tag. It uses this information along with others to properly match this render node to a "card" node used by the `mutter-device-preferred-primary` udev tag.
+
+set -eu
+
+RULE=/run/udev/rules.d/61-mutter-preferred-primary.rules
+TAG=mutter-device-preferred-primary
+seat=seat0
+
+log() { echo "set-primary-gpu: $*" >&2; }
+
+if [ "$#" -ne 1 ]; then
+    log "usage: set-primary-gpu <default|integrated|dedicated>"
+    exit 2
+fi
+policy=$1
+prop() { sed -n "s/^$1=//p"; }
+
+# Print matching GPUs as "ID_PATH|DEVNAME|DEVPATH" in switcheroo-control's enumeration order.
+cards() {
+    want_discrete=$1
+    udevadm trigger --dry-run --verbose --subsystem-match=drm --sysname-match='renderD*' 2>/dev/null |
+        while read -r render; do
+            [ -n "$render" ] || continue
+
+            discrete=0
+            case $(udevadm info --query=property --path="$render" 2>/dev/null | prop CURRENT_TAGS) in
+                *:switcheroo-discrete-gpu:*) discrete=1 ;;
+            esac
+            [ "$discrete" = "$want_discrete" ] || continue
+
+            # switcheroo classifies render nodes, but Mutter tags card nodes, so find the sibling card belonging to the same GPU.
+            for card in "$(dirname "$render")"/card[0-9]*; do
+                [ -d "$card" ] || continue
+                props=$(udevadm info --query=property --path="$card" 2>/dev/null) || continue
+
+                # Keep only DRM card devices that Mutter would enumerate for seat0; see meta_udev_is_drm_device() and meta_udev_list_drm_devices().
+                [ "$(printf '%s\n' "$props" | prop DEVTYPE)" = drm_minor ] || continue
+                devname=$(printf '%s\n' "$props" | prop DEVNAME)
+                case $devname in /dev/dri/card*) ;; *) continue ;; esac
+                dev_seat=$(printf '%s\n' "$props" | prop ID_SEAT)
+                [ -n "$dev_seat" ] || dev_seat=seat0
+                [ "$dev_seat" = "$seat" ] || continue
+                case $(printf '%s\n' "$props" | prop TAGS) in *:seat:*) ;; *) continue ;; esac
+
+                printf '%s|%s|%s\n' \
+                    "$(printf '%s\n' "$props" | prop ID_PATH)" \
+                    "$devname" \
+                    "$(printf '%s\n' "$props" | prop DEVPATH)"
+            done
+        done
+}
+
+case $policy in
+    default) target= ;;
+    integrated) target=$(cards 0 | head -n1) ;;
+    dedicated) target=$(cards 1 | head -n1) ;;
+    *) log "unknown policy '$policy'"; exit 2 ;;
+esac
+
+if [ "$policy" != default ] && [ -z "$target" ]; then
+    log "no $policy GPU on $seat; leaving Mutter's automatic selection alone"
+fi
+
+id_path=$(printf '%s' "$target" | cut -d'|' -f1)
+devname=$(printf '%s' "$target" | cut -d'|' -f2)
+devpath=$(printf '%s' "$target" | cut -d'|' -f3)
+
+if [ -n "${DRY_RUN:-}" ]; then
+    printf '%s\n' "${devname:-none}"
+    exit 0
+fi
+
+if [ -z "$target" ]; then
+    rm -f "$RULE"
+else
+    mkdir -p /run/udev/rules.d
+
+    # ID_PATH is preferred because persists under card-number changes across boots; fall back to DEVPATH for devices without one.
+    if [ -n "$id_path" ]; then
+        match="ENV{ID_PATH}==\"$id_path\""
+    else
+        match="DEVPATH==\"$devpath\""
+    fi
+    printf '# generated by set-primary-gpu, %s policy\nSUBSYSTEM=="drm", KERNEL=="card*", %s, TAG+="%s"\n' \
+        "$policy" "$match" "$TAG" >"$RULE"
+    log "primary GPU for '$policy': $devname ($id_path)"
+fi
+
+# Force reload udev and re-process the cards so the user's compositor is aware of the changes when it starts; the already-running GDM compositor ignores these change events for GPU selection.
+udevadm control --reload
+udevadm trigger --action=change --subsystem-match=drm --sysname-match='card*'
+udevadm settle
+EOF
+sudo chmod 0755 /usr/local/bin/set-primary-gpu
+```
+
+Generate the Integrated Graphics and Dedicated Graphics login entries from your current `gnome.desktop`:
+
+```bash
+sudo sh <<'EOF'
+#!/bin/sh
+# Generates Integrated and Dedicated GPU gnome session desktop files
+# Exec needs the explicit sh -c because GDM never runs it through a shell: it is split with g_shell_parse_argv and spawned directly (gdm daemon/gdm-wayland-session.c:306). If pkexec cannot apply the policy, its error lands in the journal and the session still starts, on whichever GPU Mutter would have picked by itself.
+
+set -eu
+
+SRC=/usr/share/wayland-sessions/gnome.desktop
+HELPER=/usr/local/bin/set-primary-gpu
+
+echo "[Hybrid graphics] ==> Generating GPU session entries..."
+
+if [ ! -f "$SRC" ]; then
+    echo "[Hybrid graphics] ==> ERROR: $SRC not found; available sessions:" >&2
+    ls -1 /usr/share/wayland-sessions/ >&2 || true
+    exit 1
+fi
+
+exec_line=$(sed -n 's/^Exec=//p' "$SRC")
+case $exec_line in
+    *\'* | *\"* | *\\*)
+        echo "[Hybrid graphics] ==> ERROR: $SRC Exec has quotes or backslashes, cannot wrap it: $exec_line" >&2
+        exit 1
+        ;;
+esac
+
+# Remove translated Name/Comment entries so they cannot override our custom labels, and don't advertise these GPU-specific sessions as being able to be run in headless.
+generate() {
+    policy=$1
+    label=$2
+    out=/usr/share/wayland-sessions/gnome-gpu-$policy.desktop
+    sed -e '/^Name\[/d' \
+        -e '/^Comment\[/d' \
+        -e '/^X-GDM-CanRunHeadless=/d' \
+        -e "s|^Name=.*|Name=GNOME ($label)|" \
+        -e "s|^Comment=.*|Comment=This session logs you into GNOME, preferring the $policy GPU|" \
+        -e "s#^Exec=\(.*\)#Exec=sh -c 'pkexec $HELPER $policy || true; exec \1'#" \
+        "$SRC" >"$out"
+    echo "[Hybrid graphics] ==> Wrote $out"
+}
+
+generate integrated "Integrated Graphics"
+generate dedicated "Dedicated Graphics"
+
+echo "[Hybrid graphics] ==> Generated successfully"
+EOF
+```
+
+We are not done yet as must provide permissions to maniuplate udev to the login user. Install the following polkit action to allow local sessions to run the helper without a password prompt, including during login.
+
+```bash
+sudo mkdir -p /usr/share/polkit-1/actions
+sudo tee /usr/share/polkit-1/actions/debian.livecd.set-primary-gpu.policy <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1.0/policyconfig.dtd">
+<policyconfig>
+  <vendor>debian-livecd</vendor>
+
+  <action id="debian.livecd.set-primary-gpu">
+    <description>Select the primary GPU for the graphical session</description>
+    <message>Authentication is required to select the primary GPU</message>
+  <!-- Allow local sessions without authentication. The helper is invoked
+      during GDM session startup, before logind necessarily marks the new
+      session active, so both active and inactive local sessions must be
+      permitted. Arbitrary/non-local callers are not allowed. -->
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>yes</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/local/bin/set-primary-gpu</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">false</annotate>
+  </action>
+</policyconfig>
+EOF
+sudo chmod 0644 /usr/share/polkit-1/actions/debian.livecd.set-primary-gpu.policy
+```
+
+To ensure the GNOME session isn't "stuck" on any particular GPU, we configure the following cleanup hook to reset any GPU preferences back to its default.
+
+```bash
+sudo mkdir -p /etc/gdm3/PostSession
+if [ -f /etc/gdm3/PostSession/Default ]; then
+    sudo cp --backup=numbered /etc/gdm3/PostSession/Default /etc/gdm3/PostSession/Default.before-hybrid-graphics
+fi
+sudo tee /etc/gdm3/PostSession/Default <<'EOF'
+#!/bin/sh
+# GDM runs this as root when a session ends (gdm daemon/gdm-session-worker.c:1846).
+# Resets the primary gpu back to default on any session end for a clean state.
+
+/usr/local/bin/set-primary-gpu default || true
+
+exit 0
+EOF
+sudo chmod 0755 /etc/gdm3/PostSession/Default
+```
+
+The above script overwrites `/etc/gdm3/PostSession/Default` so a backup is made to `/etc/gdm3/PostSession/Default.before-hybrid-graphics` prior.
+
+To check which GPU(s) identifies as integrated or dedicated, run the following command:
+
+```bash
+DRY_RUN=1 /usr/local/bin/set-primary-gpu integrated
+DRY_RUN=1 /usr/local/bin/set-primary-gpu dedicated
+```
+
+Reference: [`gpu-selection.yaml`](../overlays/Battery%20Management+Hybrid%20graphics/packages/gpu-selection.yaml), [`set-primary-gpu`](../overlays/Battery%20Management+Hybrid%20graphics/filesystem/live_installed/usr/local/bin/set-primary-gpu), [`debian.livecd.set-primary-gpu.policy`](../overlays/Battery%20Management+Hybrid%20graphics/filesystem/live_installed/usr/share/polkit-1/actions/debian.livecd.set-primary-gpu.policy), [`Default`](../overlays/Battery%20Management+Hybrid%20graphics/filesystem/live_installed/etc/gdm3/PostSession/Default), [`2700-generate-gpu-sessions.hook.chroot.overlay.tmpl`](../overlays/Battery%20Management+Hybrid%20graphics/lb/hooks/normal/2700-generate-gpu-sessions.hook.chroot.overlay.tmpl)
 
 ## Desktop Environment
 
@@ -736,6 +976,15 @@ The *Flatpaks* overlay provides Flatpak support and `flatpak-chroot`, to assist 
 ```sh
 flatpak-chroot install "{{ overlay.config.flatpakAppId }}"
 ```
+
+After installing or changing an NVIDIA driver on the running system, refresh Flatpak's graphics extensions:
+
+```sh
+flatpak --gl-drivers
+sudo flatpak update --system
+```
+
+The NVIDIA extension must match the loaded host driver. For example, the tested driver reports `nvidia-550-163-01` and needs `org.freedesktop.Platform.GL.nvidia-550-163-01//1.4`. If that extension is missing, install it explicitly with `sudo flatpak install --system flathub org.freedesktop.Platform.GL.nvidia-550-163-01//1.4`, using the version reported by `flatpak --gl-drivers`. Use `flatpak update --user` for a user installation. The host's Debian driver packages do not provide the graphics libraries inside Flatpak sandboxes. See [Flatpak's graphics extension documentation](https://docs.flatpak.org/en/latest/extension.html).
 
 Reference: [`flatpak.yaml`](../overlays/Flatpaks/packages/flatpak.yaml), [`flatpak-chroot`](../overlays/Flatpaks/lb/includes.chroot/usr/local/sbin/flatpak-chroot), [`0010-enable-flatpak-chroot.hook.chroot`](../overlays/Flatpaks/lb/hooks/normal/0010-enable-flatpak-chroot.hook.chroot), [`2500-install-parsec-flatpak.hook.chroot.overlay.tmpl`](../overlays/Remote%20Desktop+Parsec/lb/hooks/normal/2500-install-parsec-flatpak.hook.chroot.overlay.tmpl)
 
