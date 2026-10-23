@@ -69,7 +69,7 @@ Content based files should always have a preview thumbnail.
 
 Additionally, the "Window is ready" popup whenever any application opens should be disabled. Extensions accomplishing this are usually initially developed and created only to be subsequently unmaintained with each new GNOME version. The current extension for GNOME 45 would be [NoAnnoyance](https://extensions.gnome.org/extension/6109/noannoyance-fork/).
 
-[comment - Always update this section's current working extension for "Window is ready" for the liveCD's current version]: #
+[comment - Always update this section's currently working extension for "Window is ready" for the liveCD's current version]: #
 
 ### Window Tiling
 

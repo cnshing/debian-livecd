@@ -1,4 +1,4 @@
-# Configures TLP power mode switch on charging/discharging
+# Configures TLP power mode switching when charging/discharging.
 TLP_AUTO_SWITCH=1
 {%- set tlp_ids = {'performance': 'PRF', 'balanced': 'BAL', 'power-saver': 'SAV'} %}
 {%- if overlay.config.charging is defined and overlay.config.charging in tlp_ids %}

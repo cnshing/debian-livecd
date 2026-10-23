@@ -1,4 +1,4 @@
-# Do not add quotes to any value from key `Pin`.
+# Do not add quotes to any value of the `Pin` key.
 # Override Trixie's priority (990) for switcheroo-control only.
 # TODO: Remove this file once Debian Stable is "forky"
 Package: switcheroo-control

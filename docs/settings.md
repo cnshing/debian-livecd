@@ -20,7 +20,7 @@ Let TLP switch profiles when the charger is connected or disconnected, using per
 ```bash
 sudo mkdir -p /etc/tlp.d
 sudo tee /etc/tlp.d/50-battery-power-mode.conf <<'EOF'
-# Configures TLP power mode switch on charging/discharging
+# Configures TLP power mode switching when charging/discharging.
 TLP_AUTO_SWITCH=1
 
 # Profile while plugged in.
@@ -87,7 +87,7 @@ apply() {
     fi
 }
 
-# Loads the battery profiles, only if the configuration defines them as non-empty values.
+# Loads the battery profiles only if the configuration defines them as non-empty values.
 # Profile names are TLP's: performance, balanced, power-saver.
 PROFILES="$PROFILES 41,100,performance"
 PROFILES="$PROFILES 0,40,power-saver"
@@ -102,7 +102,7 @@ if ! upower -i "$BAT_DEVICE" 2>/dev/null | grep -qE '^[[:space:]]*power supply:[
     exit 0
 fi
 
-# plug/unplugs between this read and busctl subscribing is missed until the next State signal; start the monitor first and read inside the loop
+# Plug/unplug events between this read and busctl subscribing are missed until the next State signal; start the monitor first and read inside the loop.
 set -- $(busctl get-property org.freedesktop.UPower "$BAT_DEVICE" org.freedesktop.UPower.Device Percentage State)
 PCT=${2%%.*}
 STATE=${4:-}
@@ -231,11 +231,11 @@ Write the script that selects Mutter's primary GPU:
 sudo mkdir -p /usr/local/bin
 sudo tee /usr/local/bin/set-primary-gpu <<'EOF'
 #!/bin/sh
-# Override Mutter's primary gpu selection with 'dedicated' and 'integrated' gpus.
+# Override Mutter's primary GPU selection with 'dedicated' and 'integrated' GPUs.
 
-# Mutter has its own method for selecting a GPU at compositor startup. The script leverages a `mutter-device-preferred-primary` udev tag to override this selection. See udev tag in CURRENT_TAGS; see meta-udev.c:125, meta-backend-native.c:536, and meta-renderer-native.c:2346.
+# Mutter has its own method for selecting a GPU at compositor startup. The script leverages a `mutter-device-preferred-primary` udev tag to override this selection. See the udev tag in CURRENT_TAGS; see meta-udev.c:125, meta-backend-native.c:536, and meta-renderer-native.c:2346.
 
-# We select the first "dedicated" and non-dedicated("integrated") device in switcheroo-control's libudev enumeration order, where it is considered "dedicated" if the DRM render nodes are assigned a "switcheroo-discrete-gpu" tag. It uses this information along with others to properly match this render node to a "card" node used by the `mutter-device-preferred-primary` udev tag.
+# We select the first "dedicated" and non-dedicated ("integrated") device in switcheroo-control's libudev enumeration order, where it is considered "dedicated" if the DRM render nodes are assigned a "switcheroo-discrete-gpu" tag. It uses this information along with other details to properly match this render node to a "card" node used by the `mutter-device-preferred-primary` udev tag.
 
 set -eu
 
@@ -312,7 +312,7 @@ if [ -z "$target" ]; then
 else
     mkdir -p /run/udev/rules.d
 
-    # ID_PATH is preferred because persists under card-number changes across boots; fall back to DEVPATH for devices without one.
+    # ID_PATH is preferred because it persists under card-number changes across boots; fall back to DEVPATH for devices without one.
     if [ -n "$id_path" ]; then
         match="ENV{ID_PATH}==\"$id_path\""
     else
@@ -323,7 +323,7 @@ else
     log "primary GPU for '$policy': $devname ($id_path)"
 fi
 
-# Force reload udev and re-process the cards so the user's compositor is aware of the changes when it starts; the already-running GDM compositor ignores these change events for GPU selection.
+# Force udev to reload and reprocess the cards so the user's compositor is aware of the changes when it starts; the already-running GDM compositor ignores these change events for GPU selection.
 udevadm control --reload
 udevadm trigger --action=change --subsystem-match=drm --sysname-match='card*'
 udevadm settle
@@ -336,8 +336,8 @@ Generate the Integrated Graphics and Dedicated Graphics login entries from your 
 ```bash
 sudo sh <<'EOF'
 #!/bin/sh
-# Generates Integrated and Dedicated GPU gnome session desktop files
-# Exec needs the explicit sh -c because GDM never runs it through a shell: it is split with g_shell_parse_argv and spawned directly (gdm daemon/gdm-wayland-session.c:306). If pkexec cannot apply the policy, its error lands in the journal and the session still starts, on whichever GPU Mutter would have picked by itself.
+# Generates Integrated and Dedicated GPU GNOME session desktop files.
+# Exec needs the explicit sh -c because GDM never runs it through a shell: it is split with g_shell_parse_argv and spawned directly (gdm daemon/gdm-wayland-session.c:306). If pkexec cannot apply the policy, its error lands in the journal and the session still starts on whichever GPU Mutter would have picked by itself.
 
 set -eu
 
@@ -360,7 +360,7 @@ case $exec_line in
         ;;
 esac
 
-# Remove translated Name/Comment entries so they cannot override our custom labels, and don't advertise these GPU-specific sessions as being able to be run in headless.
+# Remove translated Name/Comment entries so they cannot override our custom labels, and don't advertise these GPU-specific sessions as being able to run in headless mode.
 generate() {
     policy=$1
     label=$2
@@ -423,7 +423,7 @@ fi
 sudo tee /etc/gdm3/PostSession/Default <<'EOF'
 #!/bin/sh
 # GDM runs this as root when a session ends (gdm daemon/gdm-session-worker.c:1846).
-# Resets the primary gpu back to default on any session end for a clean state.
+# Resets the primary GPU to its default when any session ends for a clean state.
 
 /usr/local/bin/set-primary-gpu default || true
 
@@ -675,7 +675,7 @@ EXT=/usr/share/gnome-shell/extensions
 DTP="gsettings --schemadir $EXT/dash-to-panel@jderose9.github.com/schemas set org.gnome.shell.extensions.dash-to-panel"
 ARC="gsettings --schemadir $EXT/arcmenu@arcmenu.com/schemas set org.gnome.shell.extensions.arcmenu"
 
-# Keyed by monitor index (0, 1, 2) since monitor ids are hardware specific
+# Keyed by monitor index (0, 1, 2) since monitor IDs are hardware-specific
 L='[{"element":"showAppsButton","visible":false,"position":"stackedTL"},{"element":"activitiesButton","visible":false,"position":"stackedTL"},{"element":"leftBox","visible":true,"position":"stackedTL"},{"element":"taskbar","visible":true,"position":"stackedTL"},{"element":"centerBox","visible":true,"position":"stackedBR"},{"element":"rightBox","visible":true,"position":"stackedBR"},{"element":"systemMenu","visible":true,"position":"stackedBR"},{"element":"dateMenu","visible":true,"position":"stackedBR"},{"element":"desktopButton","visible":true,"position":"stackedBR"}]'
 $DTP panel-element-positions "{\"0\":$L,\"1\":$L,\"2\":$L}"
 

@@ -52,7 +52,7 @@ apply() {
     fi
 }
 
-# Loads the battery profiles, only if the configuration defines them as non-empty values.
+# Loads the battery profiles only if the configuration defines them as non-empty values.
 # Profile names are TLP's: performance, balanced, power-saver.
 {% for name, profile in overlay.config.profiles.items() %}
 {%- if name not in ['performance', 'balanced', 'power-saver'] %}
@@ -74,7 +74,7 @@ if ! upower -i "$BAT_DEVICE" 2>/dev/null | grep -qE '^[[:space:]]*power supply:[
     exit 0
 fi
 
-# plug/unplugs between this read and busctl subscribing is missed until the next State signal; start the monitor first and read inside the loop
+# Plug/unplug events between this read and busctl subscribing are missed until the next State signal; start the monitor first and read inside the loop.
 set -- $(busctl get-property org.freedesktop.UPower "$BAT_DEVICE" org.freedesktop.UPower.Device Percentage State)
 PCT=${2%%.*}
 STATE=${4:-}

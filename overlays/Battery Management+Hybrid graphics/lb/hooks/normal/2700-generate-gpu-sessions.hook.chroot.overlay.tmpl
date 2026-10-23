@@ -1,6 +1,6 @@
 #!/bin/sh
-# Generates Integrated and Dedicated GPU gnome session desktop files
-# Exec needs the explicit sh -c because GDM never runs it through a shell: it is split with g_shell_parse_argv and spawned directly (gdm daemon/gdm-wayland-session.c:306). If pkexec cannot apply the policy, its error lands in the journal and the session still starts, on whichever GPU Mutter would have picked by itself.
+# Generates Integrated and Dedicated GPU GNOME session desktop files.
+# Exec needs the explicit sh -c because GDM never runs it through a shell: it is split with g_shell_parse_argv and spawned directly (gdm daemon/gdm-wayland-session.c:306). If pkexec cannot apply the policy, its error lands in the journal and the session still starts on whichever GPU Mutter would have picked by itself.
 
 set -eu
 
@@ -23,7 +23,7 @@ case $exec_line in
         ;;
 esac
 
-# Remove translated Name/Comment entries so they cannot override our custom labels, and don't advertise these GPU-specific sessions as being able to be run in headless.
+# Remove translated Name/Comment entries so they cannot override our custom labels, and don't advertise these GPU-specific sessions as being able to run in headless mode.
 generate() {
     policy=$1
     label=$2
