@@ -18,7 +18,7 @@ Ideally, there should be an application that automatically applies an [AutoEQ](h
 
 However, any power or battery settings manually changed by the user should take precedence for the session.
 
-### NVIDIA Optimus
+### Hybrid graphics
 
 If possible, the user should be able to explicitly choose screen rendering from a dedicated GPU, deciding which use-case is most appropriate for their battery and performance needs.
 
