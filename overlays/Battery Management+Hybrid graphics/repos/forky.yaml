@@ -1,0 +1,3 @@
+- name: debian-forky
+  repo: deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] https://deb.debian.org/debian forky main
+  binary: true
