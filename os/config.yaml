@@ -1,9 +1,9 @@
 distribution: trixie
 lb:
   aptRecommends: true
-  aptOptions: "-y -o APT::Default-Release=trixie" # NOTE: Default release should be the same as distribution
+  aptOptions: "-y -o APT::Default-Release=trixie" # NOTE: The default release should be the same as the distribution
   archiveAreas: main contrib non-free non-free-firmware
-  win32Loader: false # win32-loader not supported on trixie distributions 
+  win32Loader: false # win32-loader is not supported on trixie distributions
   bootappendLive: boot=live components username=live locales=en_US.UTF-8 keyboard-layouts=us copy-live-medium-files=RustDesk.toml,RustDesk2.toml # copy-live-medium-files: files copied off the boot drive's root before toram, for RustDesk's /run/live/medium/ configPaths
 overlays:
   Networking: {}
@@ -28,6 +28,17 @@ overlays:
   Text Editor: {}
   Video Player: {}
   Audio Effects: {}
+  # Simple battery management rules can lead to thermal/power issues for some users - enable this only if you know what you are doing
+  # Battery Management:
+  #   charging: performance
+  #   profiles:
+  #     performance:
+  #       start: 41
+  #       end: 100
+  #     power-saver:
+  #       start: 0
+  #       end: 40
+  Battery Management+Hybrid graphics: {}
   Remote Desktop: {}
   Remote Desktop+Parsec: {}
   Miscellaneous+Load to RAM: {}
@@ -37,7 +48,7 @@ overlays:
     appImageHomeDir: AppImages
   Remote Desktop+Rustdesk:
     configPaths:
-      RustDeskToml: /run/live/medium/RustDesk.toml # Configure RustDesk at the live medium directory
+      RustDeskToml: /run/live/medium/RustDesk.toml # Configure RustDesk in the live medium directory
       RustDesk2Toml: /run/live/medium/RustDesk2.toml
   Browser:
     ungoogled-chromium:

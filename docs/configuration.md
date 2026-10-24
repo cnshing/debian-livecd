@@ -14,11 +14,15 @@ Ideally, there should be an application that automatically applies an [AutoEQ](h
 
 ## Battery Management
 
-[TLP](https://github.com/linrunner/TLP) will be used to optimize battery with performance. Preferentially, any laptop devices should use full computing power when charging and switch to power-saving mode within `0%` - `40%` battery thresholds.
+[TLP](https://github.com/linrunner/TLP) will be used to optimize battery with performance. Preferentially, any laptop devices can be configured to use full computing power when charging and switch to power-saving mode within `0%` - `40%` battery thresholds.
 
-### NVIDIA Optimus
+However, any power or battery settings manually changed by the user should take precedence for the session.
 
-If possible, there should be a separate boot entry from the standard one that explicitly enables screen rendering from a dedicated GPU, allowing the user to choose which use-case is most appropriate for their battery and performance needs.
+### Hybrid graphics
+
+If possible, the user should be able to explicitly choose screen rendering from a dedicated GPU, deciding which use-case is most appropriate for their battery and performance needs.
+
+Specifically, this choice should be presented as three options at the login screen: Default, Integrated Graphics, and Dedicated Graphics, rendering the desktop session and subsequent applications using the selected GPU.
 
 ## Browser
 
@@ -65,7 +69,7 @@ Content based files should always have a preview thumbnail.
 
 Additionally, the "Window is ready" popup whenever any application opens should be disabled. Extensions accomplishing this are usually initially developed and created only to be subsequently unmaintained with each new GNOME version. The current extension for GNOME 45 would be [NoAnnoyance](https://extensions.gnome.org/extension/6109/noannoyance-fork/).
 
-[comment - Always update this section's current working extension for "Window is ready" for the liveCD's current version]: #
+[comment - Always update this section's currently working extension for "Window is ready" for the liveCD's current version]: #
 
 ### Window Tiling
 
