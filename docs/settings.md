@@ -913,6 +913,15 @@ gsettings set org.gnome.desktop.sound allow-volume-above-100-percent false
 
 ### Nautilus
 
+Allow users to create an empty `New Text Document.txt` in the file manager through the following:
+
+```bash
+mkdir -p ~/Templates
+touch ~/Templates/'New Text Document.txt'
+```
+
+Reference: [`New Text Document.txt`](../overlays/File%20Manager/filesystem/live_installed/etc/skel/Templates/New%20Text%20Document.txt)
+
 Install [nautilus-admin](https://github.com/brunonova/nautilus-admin) to maintain the "Open as Root" feature in Nautilus. If you are using an alternative default text editor and do not wish to include `gedit`, you may run the following command:
 
 ```bash
