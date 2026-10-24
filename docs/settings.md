@@ -677,6 +677,7 @@ The `accent-*@brgvos` extensions normally switch the GTK, Shell and icon themes 
 Assuming the [Dash to Panel](https://extensions.gnome.org/extension/1160/dash-to-panel/) and [ArcMenu](https://extensions.gnome.org/extension/3628/arcmenu/) extensions are installed, these `gsettings` commands are used to achieve the following configuration:
 
 - The Activities and Show Apps buttons are hidden, with the taskbar on the left, and the system menu, date menu and show-desktop button on the right.
+- The main panel resides in GNOME's primary monitor. 
 - ArcMenu uses the Redmond layout with the search bar at the bottom, a square avatar, and `bookmarks`, `external devices`, `open windows` and `recent files` enabled.
 - Windows are set to display minimize, maximize and close buttons, as GNOME defaults to a close button only.
 
@@ -685,6 +686,9 @@ Assuming the [Dash to Panel](https://extensions.gnome.org/extension/1160/dash-to
 EXT=/usr/share/gnome-shell/extensions
 DTP="gsettings --schemadir $EXT/dash-to-panel@jderose9.github.com/schemas set org.gnome.shell.extensions.dash-to-panel"
 ARC="gsettings --schemadir $EXT/arcmenu@arcmenu.com/schemas set org.gnome.shell.extensions.arcmenu"
+
+$DTP primary-monitor "''"
+$DTP multi-monitors false
 
 # Keyed by monitor index (0, 1, 2) since monitor IDs are hardware-specific
 L='[{"element":"showAppsButton","visible":false,"position":"stackedTL"},{"element":"activitiesButton","visible":false,"position":"stackedTL"},{"element":"leftBox","visible":true,"position":"stackedTL"},{"element":"taskbar","visible":true,"position":"stackedTL"},{"element":"centerBox","visible":true,"position":"stackedBR"},{"element":"rightBox","visible":true,"position":"stackedBR"},{"element":"systemMenu","visible":true,"position":"stackedBR"},{"element":"dateMenu","visible":true,"position":"stackedBR"},{"element":"desktopButton","visible":true,"position":"stackedBR"}]'
