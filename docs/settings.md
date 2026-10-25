@@ -1,6 +1,458 @@
 # Settings
 
-The following document contains more detailed reproducible application settings and instructions to replicate some of the desired [configuration](configuration.md) of the liveCD.
+This document provides commands and application settings to reproduce the liveCD's [configuration](configuration.md) on an installed system. Follow each section's instructions directly; custom file contents are included so you can create them without a checkout of this repository.
+
+The references identify the source files used by the build. When developers or coding assistants change those files, update the corresponding commands and embedded contents here so following the instructions produces identical files. Keep each section's references after its setup and verification instructions.
+
+## Battery Management
+
+The [Battery Management configuration](configuration.md#battery-management) uses TLP for power profiles and `tlp-pd` for GNOME's Power Mode switch. We shall configure the settings to performance while charging or at 41–100% on battery, and power saver at 0–40%, although you are free to adjust these numbers.
+
+Install the dependencies. On  Trixie systems,`tlp-pd` is available from `trixie-backports`. 
+
+```bash
+sudo apt update
+sudo apt install tlp tlp-pd upower jq
+```
+
+Let TLP switch profiles when the charger is connected or disconnected, using performance while plugged in:
+
+```bash
+sudo mkdir -p /etc/tlp.d
+sudo tee /etc/tlp.d/50-battery-power-mode.conf <<'EOF'
+# Configures TLP power mode switching when charging/discharging.
+TLP_AUTO_SWITCH=1
+
+# Profile while plugged in.
+TLP_PROFILE_AC=PRF
+EOF
+```
+
+TLP does not select profiles by battery percentage, so a monitoring service is needed. The below script configures a service that automatically changes performance profiles by percentage, until the current profile is externally overriden by the user. The monitoring service will also exit if no battery is present.
+
+```bash
+sudo mkdir -p /usr/local/bin
+sudo tee /usr/local/bin/battery-power-mode <<'EOF'
+#!/bin/sh
+
+set -eu
+
+BAT_DEVICE="/org/freedesktop/UPower/devices/DisplayDevice"
+PP="org.freedesktop.UPower.PowerProfiles"
+PP_PATH="/org/freedesktop/UPower/PowerProfiles"
+GSD_POWER="org.gnome.SettingsDaemon.Power"
+PROFILES=""
+
+# User overrides, kept until the service restarts:
+# PICKED - Defer to any manually set power mode in GNOME while on battery.
+# NO_SAVER - GNOME Settings Daemon held power-saver on low battery. When enabled, defer to this rather than our own configured values.
+PICKED=0
+NO_SAVER=0
+# "<caller> <cookie>" of the last Set/HoldProfile call; it only counts once tlp-pd accepts it,
+# since polkit rejects callers outside the active session.
+PENDING_PICK=""
+PENDING_HOLD=""
+
+plugged_in() {
+    # UPower Device.State: 1 charging, 4 fully charged, 5 pending charge.
+    case "$STATE" in 1|4|5) return 0 ;; esac
+    return 1
+}
+
+apply() {
+    # Charging belongs to TLP (TLP_PROFILE_AC); only battery percentage is handled here.
+    plugged_in && return 0
+    [ "$PICKED" = 0 ] || return 0
+    case "$PCT" in ''|*[!0-9]*) return 0 ;; esac
+    want=""
+    for p in $PROFILES; do
+        start=${p%%,*}
+        rest=${p#*,}
+        end=${rest%%,*}
+        profile=${rest#*,}
+        [ "$NO_SAVER" = 1 ] && [ "$profile" = "power-saver" ] && continue
+        if [ "$PCT" -ge "$start" ] && [ "$PCT" -le "$end" ]; then
+            want="$profile"
+            break
+        fi
+    done
+    [ -n "$want" ] && [ "$want" != "$ACTIVE" ] || return 0
+    # Defer to any ProfileHold currently active
+    [ "$(busctl get-property "$PP" "$PP_PATH" "$PP" ActiveProfileHolds 2>/dev/null)" = "aa{sv} 0" ] || return 0
+    if tlp "$want" >/dev/null 2>&1; then
+        echo "battery-power-mode: ${PCT}% -> $want" >&2
+        ACTIVE="$want"
+    else
+        echo "battery-power-mode: 'tlp $want' failed" >&2
+    fi
+}
+
+# Loads the battery profiles only if the configuration defines them as non-empty values.
+# Profile names are TLP's: performance, balanced, power-saver.
+PROFILES="$PROFILES 41,100,performance"
+PROFILES="$PROFILES 0,40,power-saver"
+
+if [ -z "$PROFILES" ]; then
+    echo "battery-power-mode: no usable profiles configured, exiting" >&2
+    exit 0
+fi
+
+if ! upower -i "$BAT_DEVICE" 2>/dev/null | grep -qE '^[[:space:]]*power supply:[[:space:]]*yes'; then
+    echo "battery-power-mode: no battery present, exiting" >&2
+    exit 0
+fi
+
+# Plug/unplug events between this read and busctl subscribing are missed until the next State signal; start the monitor first and read inside the loop.
+set -- $(busctl get-property org.freedesktop.UPower "$BAT_DEVICE" org.freedesktop.UPower.Device Percentage State)
+PCT=${2%%.*}
+STATE=${4:-}
+# Reading ActiveProfile also makes tlp-pd emit PropertiesChanged on this interface: it only
+# signals interfaces a client has used.
+ACTIVE=$(busctl get-property "$PP" "$PP_PATH" "$PP" ActiveProfile 2>/dev/null | sed -n 's/^s "\(.*\)"$/\1/p')
+apply
+
+# Events, one per line:
+#   battery <percentage|-> <state|->  UPower DisplayDevice changed
+#   profile <name>                    tlp-pd's ActiveProfile changed (by TLP, a hold, or us)
+#   pick <caller> <cookie>            someone asked tlp-pd for a Power Mode (GNOME Settings/Shell)
+#   hold <caller> <cookie>            GNOME Settings Daemon asked to hold power-saver
+#   ok <caller> <cookie>              tlp-pd accepted that call
+busctl monitor --system --json=short \
+    --match="type=signal,sender=org.freedesktop.UPower,path=$BAT_DEVICE,interface=org.freedesktop.DBus.Properties,member=PropertiesChanged" \
+    --match="type=signal,sender=$PP,path=$PP_PATH,interface=org.freedesktop.DBus.Properties,member=PropertiesChanged" \
+    --match="type=method_call,destination=$PP,path=$PP_PATH,interface=org.freedesktop.DBus.Properties,member=Set" \
+    --match="type=method_call,destination=$PP,path=$PP_PATH,interface=$PP,member=HoldProfile" \
+    --match="type=method_return,sender=$PP" |
+jq --unbuffered -r --arg bat "$BAT_DEVICE" --arg gsd "$GSD_POWER" '
+    if .type == "signal" and .path == $bat then
+        .payload.data[1] | select(has("Percentage") or has("State"))
+        | "battery \(.Percentage.data // "-" | if . == "-" then . else floor end) \(.State.data // "-")"
+    elif .type == "signal" then
+        .payload.data[1].ActiveProfile.data // empty
+        | select(. == "performance" or . == "balanced" or . == "power-saver") | "profile \(.)"
+    elif .member == "Set" then
+        select(.payload.data[1] == "ActiveProfile") | "pick \(.sender) \(.cookie)"
+    elif .member == "HoldProfile" then
+        select(.payload.data[0] == "power-saver" and .payload.data[2] == $gsd) | "hold \(.sender) \(.cookie)"
+    elif .type == "method_return" then
+        "ok \(.destination) \(.reply_cookie)"
+    else empty end' |
+while IFS=' ' read -r event a b; do
+    case "$event" in
+        battery)
+            [ "$a" = "-" ] || PCT="$a"
+            [ "$b" = "-" ] || STATE="$b"
+            apply
+            ;;
+        profile)
+            ACTIVE="$a"
+            # Re-apply after TLP's own switch on unplug or a released hold reverting it.
+            apply
+            ;;
+        pick) PENDING_PICK="$a $b" ;;
+        hold) PENDING_HOLD="$a $b" ;;
+        ok)
+            if [ "$a $b" = "$PENDING_PICK" ]; then
+                PENDING_PICK=""
+                if plugged_in; then
+                    echo "battery-power-mode: Power Mode picked in GNOME while charging; charging stays with TLP" >&2
+                elif [ "$PICKED" = 0 ]; then
+                    PICKED=1
+                    echo "battery-power-mode: Power Mode picked in GNOME, percentage profiles off until restart" >&2
+                fi
+            elif [ "$a $b" = "$PENDING_HOLD" ]; then
+                PENDING_HOLD=""
+                if [ "$NO_SAVER" = 0 ]; then
+                    NO_SAVER=1
+                    echo "battery-power-mode: GNOME holds power-saver on low battery, power-saver profiles off until restart" >&2
+                fi
+            fi
+            ;;
+    esac
+done
+EOF
+sudo chmod 0755 /usr/local/bin/battery-power-mode
+```
+
+We use the following trick to distinguish between an explicit performance setting change by a user vereus GNOME's power saver mode by disabling it outright: 
+
+```bash
+gsettings set org.gnome.settings-daemon.plugins.power power-saver-profile-on-low-battery false
+```
+
+Start the monitor automatically using the overlay's system service:
+
+```bash
+sudo tee /etc/systemd/system/battery-power-mode.service <<'EOF'
+[Unit]
+Description=Switch TLP profile by battery percentage (UPower monitor)
+After=multi-user.target tlp.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/battery-power-mode
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+sudo chmod 0644 /etc/systemd/system/battery-power-mode.service
+sudo systemctl daemon-reload
+sudo systemctl enable tlp.service battery-power-mode.service
+sudo systemctl restart tlp.service battery-power-mode.service
+```
+
+To resume automatic percentage switching after a manual override, run `sudo systemctl restart battery-power-mode.service`.
+
+Reference: [`config.yaml`](../overlays/Battery%20Management/config.yaml), [`config.yaml`](../os/config.yaml), [`batterymanagement.yaml`](../overlays/Battery%20Management/packages/batterymanagement.yaml), [`50-battery-power-mode.conf.overlay.tmpl`](../overlays/Battery%20Management/lb/includes.chroot/etc/tlp.d/50-battery-power-mode.conf.overlay.tmpl), [`battery-power-mode.overlay.tmpl`](../overlays/Battery%20Management/lb/includes.chroot/usr/local/bin/battery-power-mode.overlay.tmpl), [`10-battery-power-mode`](../overlays/Battery%20Management/filesystem/live_installed/etc/dconf/db/desktop.d/10-battery-power-mode), [`battery-power-mode.service`](../overlays/Battery%20Management/lb/includes.chroot/etc/systemd/system/battery-power-mode.service), [`2600-enable-battery-power-mode.hook.chroot.overlay.tmpl`](../overlays/Battery%20Management/lb/hooks/normal/2600-enable-battery-power-mode.hook.chroot.overlay.tmpl)
+
+### Hybrid graphics
+
+The [Hybrid graphics configuration](configuration.md#hybrid-graphics) adds **GNOME (Integrated Graphics)** and **GNOME (Dedicated Graphics)** to GDM's session chooser, configuring Mutter to render the session using those devices. It assumes an pre-existing working graphics driver to function properly.
+
+Install the dependencies and refresh GPU classification:
+
+```bash
+sudo apt update
+sudo apt install switcheroo-control pkexec
+sudo udevadm control --reload
+sudo udevadm trigger --action=change --subsystem-match=drm
+sudo udevadm settle
+sudo systemctl restart switcheroo-control
+```
+
+Write the script that selects Mutter's primary GPU:
+
+```bash
+sudo mkdir -p /usr/local/bin
+sudo tee /usr/local/bin/set-primary-gpu <<'EOF'
+#!/bin/sh
+# Override Mutter's primary GPU selection with 'dedicated' and 'integrated' GPUs.
+
+# Mutter has its own method for selecting a GPU at compositor startup. The script leverages a `mutter-device-preferred-primary` udev tag to override this selection. See the udev tag in CURRENT_TAGS; see meta-udev.c:125, meta-backend-native.c:536, and meta-renderer-native.c:2346.
+
+# We select the first "dedicated" and non-dedicated ("integrated") device in switcheroo-control's libudev enumeration order, where it is considered "dedicated" if the DRM render nodes are assigned a "switcheroo-discrete-gpu" tag. It uses this information along with other details to properly match this render node to a "card" node used by the `mutter-device-preferred-primary` udev tag.
+
+set -eu
+
+RULE=/run/udev/rules.d/61-mutter-preferred-primary.rules
+TAG=mutter-device-preferred-primary
+seat=seat0
+
+log() { echo "set-primary-gpu: $*" >&2; }
+
+if [ "$#" -ne 1 ]; then
+    log "usage: set-primary-gpu <default|integrated|dedicated>"
+    exit 2
+fi
+policy=$1
+prop() { sed -n "s/^$1=//p"; }
+
+# Print matching GPUs as "ID_PATH|DEVNAME|DEVPATH" in switcheroo-control's enumeration order.
+cards() {
+    want_discrete=$1
+    udevadm trigger --dry-run --verbose --subsystem-match=drm --sysname-match='renderD*' 2>/dev/null |
+        while read -r render; do
+            [ -n "$render" ] || continue
+
+            # Based on testing, the earlier boot/non-boot fallback seems sufficient for now.
+            # TODO: Uncomment below and switch to tag-only classification once Debian stable switcheroo-control >= 3.0.
+            # discrete=0
+            # case $(udevadm info --query=property --path="$render" 2>/dev/null | prop CURRENT_TAGS) in
+            #     *:switcheroo-discrete-gpu:*) discrete=1 ;;
+            # esac
+
+            discrete=0
+            case $(udevadm info --query=property --path="$render" 2>/dev/null | prop CURRENT_TAGS) in
+                *:switcheroo-discrete-gpu:*) discrete=1 ;;
+                *)
+                    # shortcut: boot/non-boot is not universal GPU classification; replace this fallback at the TODO above.
+                    if [ ! -e /usr/lib/udev/rules.d/30-discrete-gpu.rules ] &&
+                        [ "$(cat "$render/device/boot_vga" 2>/dev/null || true)" != 1 ]; then
+                        discrete=1
+                    fi
+                    ;;
+            esac
+            [ "$discrete" = "$want_discrete" ] || continue
+
+            # switcheroo classifies render nodes, but Mutter tags card nodes, so find the sibling card belonging to the same GPU.
+            for card in "$(dirname "$render")"/card[0-9]*; do
+                [ -d "$card" ] || continue
+                props=$(udevadm info --query=property --path="$card" 2>/dev/null) || continue
+
+                # Keep only DRM card devices that Mutter would enumerate for seat0; see meta_udev_is_drm_device() and meta_udev_list_drm_devices().
+                [ "$(printf '%s\n' "$props" | prop DEVTYPE)" = drm_minor ] || continue
+                devname=$(printf '%s\n' "$props" | prop DEVNAME)
+                case $devname in /dev/dri/card*) ;; *) continue ;; esac
+                dev_seat=$(printf '%s\n' "$props" | prop ID_SEAT)
+                [ -n "$dev_seat" ] || dev_seat=seat0
+                [ "$dev_seat" = "$seat" ] || continue
+                case $(printf '%s\n' "$props" | prop TAGS) in *:seat:*) ;; *) continue ;; esac
+
+                printf '%s|%s|%s\n' \
+                    "$(printf '%s\n' "$props" | prop ID_PATH)" \
+                    "$devname" \
+                    "$(printf '%s\n' "$props" | prop DEVPATH)"
+            done
+        done
+}
+
+case $policy in
+    default) target= ;;
+    integrated) target=$(cards 0 | head -n1) ;;
+    dedicated) target=$(cards 1 | head -n1) ;;
+    *) log "unknown policy '$policy'"; exit 2 ;;
+esac
+
+if [ "$policy" != default ] && [ -z "$target" ]; then
+    log "no $policy GPU on $seat; leaving Mutter's automatic selection alone"
+fi
+
+id_path=$(printf '%s' "$target" | cut -d'|' -f1)
+devname=$(printf '%s' "$target" | cut -d'|' -f2)
+devpath=$(printf '%s' "$target" | cut -d'|' -f3)
+
+if [ -n "${DRY_RUN:-}" ]; then
+    printf '%s\n' "${devname:-none}"
+    exit 0
+fi
+
+if [ -z "$target" ]; then
+    rm -f "$RULE"
+else
+    mkdir -p /run/udev/rules.d
+
+    # ID_PATH is preferred because it persists under card-number changes across boots; fall back to DEVPATH for devices without one.
+    if [ -n "$id_path" ]; then
+        match="ENV{ID_PATH}==\"$id_path\""
+    else
+        match="DEVPATH==\"$devpath\""
+    fi
+    printf '# generated by set-primary-gpu, %s policy\nSUBSYSTEM=="drm", KERNEL=="card*", %s, TAG+="%s"\n' \
+        "$policy" "$match" "$TAG" >"$RULE"
+    log "primary GPU for '$policy': $devname ($id_path)"
+fi
+
+# Force udev to reload and reprocess the cards so the user's compositor is aware of the changes when it starts; the already-running GDM compositor ignores these change events for GPU selection.
+udevadm control --reload
+udevadm trigger --action=change --subsystem-match=drm --sysname-match='card*'
+udevadm settle
+EOF
+sudo chmod 0755 /usr/local/bin/set-primary-gpu
+```
+
+Generate the Integrated Graphics and Dedicated Graphics login entries from your current `gnome.desktop`:
+
+```bash
+sudo sh <<'EOF'
+#!/bin/sh
+# Generates Integrated and Dedicated GPU GNOME session desktop files.
+# Exec needs the explicit sh -c because GDM never runs it through a shell: it is split with g_shell_parse_argv and spawned directly (gdm daemon/gdm-wayland-session.c:306). If pkexec cannot apply the policy, its error lands in the journal and the session still starts on whichever GPU Mutter would have picked by itself.
+
+set -eu
+
+SRC=/usr/share/wayland-sessions/gnome.desktop
+HELPER=/usr/local/bin/set-primary-gpu
+
+echo "[Hybrid graphics] ==> Generating GPU session entries..."
+
+if [ ! -f "$SRC" ]; then
+    echo "[Hybrid graphics] ==> ERROR: $SRC not found; available sessions:" >&2
+    ls -1 /usr/share/wayland-sessions/ >&2 || true
+    exit 1
+fi
+
+exec_line=$(sed -n 's/^Exec=//p' "$SRC")
+case $exec_line in
+    *\'* | *\"* | *\\*)
+        echo "[Hybrid graphics] ==> ERROR: $SRC Exec has quotes or backslashes, cannot wrap it: $exec_line" >&2
+        exit 1
+        ;;
+esac
+
+# Remove translated Name/Comment entries so they cannot override our custom labels, and don't advertise these GPU-specific sessions as being able to run in headless mode.
+generate() {
+    policy=$1
+    label=$2
+    out=/usr/share/wayland-sessions/gnome-gpu-$policy.desktop
+    sed -e '/^Name\[/d' \
+        -e '/^Comment\[/d' \
+        -e '/^X-GDM-CanRunHeadless=/d' \
+        -e "s|^Name=.*|Name=GNOME ($label)|" \
+        -e "s|^Comment=.*|Comment=This session logs you into GNOME, preferring the $policy GPU|" \
+        -e "s#^Exec=\(.*\)#Exec=sh -c 'pkexec $HELPER $policy || true; exec \1'#" \
+        "$SRC" >"$out"
+    echo "[Hybrid graphics] ==> Wrote $out"
+}
+
+generate integrated "Integrated Graphics"
+generate dedicated "Dedicated Graphics"
+
+echo "[Hybrid graphics] ==> Generated successfully"
+EOF
+```
+
+We are not done yet as must provide permissions to maniuplate udev to the login user. Install the following polkit action to allow local sessions to run the helper without a password prompt, including during login.
+
+```bash
+sudo mkdir -p /usr/share/polkit-1/actions
+sudo tee /usr/share/polkit-1/actions/debian.livecd.set-primary-gpu.policy <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1.0/policyconfig.dtd">
+<policyconfig>
+  <vendor>debian-livecd</vendor>
+
+  <action id="debian.livecd.set-primary-gpu">
+    <description>Select the primary GPU for the graphical session</description>
+    <message>Authentication is required to select the primary GPU</message>
+  <!-- Allow local sessions without authentication. The helper is invoked
+      during GDM session startup, before logind necessarily marks the new
+      session active, so both active and inactive local sessions must be
+      permitted. Arbitrary/non-local callers are not allowed. -->
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>yes</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/local/bin/set-primary-gpu</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">false</annotate>
+  </action>
+</policyconfig>
+EOF
+sudo chmod 0644 /usr/share/polkit-1/actions/debian.livecd.set-primary-gpu.policy
+```
+
+To ensure the GNOME session isn't "stuck" on any particular GPU, we configure the following cleanup hook to reset any GPU preferences back to its default.
+
+```bash
+sudo mkdir -p /etc/gdm3/PostSession
+if [ -f /etc/gdm3/PostSession/Default ]; then
+    sudo cp --backup=numbered /etc/gdm3/PostSession/Default /etc/gdm3/PostSession/Default.before-hybrid-graphics
+fi
+sudo tee /etc/gdm3/PostSession/Default <<'EOF'
+#!/bin/sh
+# GDM runs this as root when a session ends (gdm daemon/gdm-session-worker.c:1846).
+# Resets the primary GPU to its default when any session ends for a clean state.
+
+/usr/local/bin/set-primary-gpu default || true
+
+exit 0
+EOF
+sudo chmod 0755 /etc/gdm3/PostSession/Default
+```
+
+The above script overwrites `/etc/gdm3/PostSession/Default` so a backup is made to `/etc/gdm3/PostSession/Default.before-hybrid-graphics` prior.
+
+To check which GPU(s) identifies as integrated or dedicated, run the following command:
+
+```bash
+DRY_RUN=1 /usr/local/bin/set-primary-gpu integrated
+DRY_RUN=1 /usr/local/bin/set-primary-gpu dedicated
+```
+
+Reference: [`gpu-selection.yaml`](../overlays/Battery%20Management+Hybrid%20graphics/packages/gpu-selection.yaml), [`set-primary-gpu`](../overlays/Battery%20Management+Hybrid%20graphics/filesystem/live_installed/usr/local/bin/set-primary-gpu), [`debian.livecd.set-primary-gpu.policy`](../overlays/Battery%20Management+Hybrid%20graphics/filesystem/live_installed/usr/share/polkit-1/actions/debian.livecd.set-primary-gpu.policy), [`Default`](../overlays/Battery%20Management+Hybrid%20graphics/filesystem/live_installed/etc/gdm3/PostSession/Default), [`2700-generate-gpu-sessions.hook.chroot.overlay.tmpl`](../overlays/Battery%20Management+Hybrid%20graphics/lb/hooks/normal/2700-generate-gpu-sessions.hook.chroot.overlay.tmpl)
 
 ## Desktop Environment
 
@@ -225,6 +677,7 @@ The `accent-*@brgvos` extensions normally switch the GTK, Shell and icon themes 
 Assuming the [Dash to Panel](https://extensions.gnome.org/extension/1160/dash-to-panel/) and [ArcMenu](https://extensions.gnome.org/extension/3628/arcmenu/) extensions are installed, these `gsettings` commands are used to achieve the following configuration:
 
 - The Activities and Show Apps buttons are hidden, with the taskbar on the left, and the system menu, date menu and show-desktop button on the right.
+- The main panel resides in GNOME's primary monitor. 
 - ArcMenu uses the Redmond layout with the search bar at the bottom, a square avatar, and `bookmarks`, `external devices`, `open windows` and `recent files` enabled.
 - Windows are set to display minimize, maximize and close buttons, as GNOME defaults to a close button only.
 
@@ -234,7 +687,10 @@ EXT=/usr/share/gnome-shell/extensions
 DTP="gsettings --schemadir $EXT/dash-to-panel@jderose9.github.com/schemas set org.gnome.shell.extensions.dash-to-panel"
 ARC="gsettings --schemadir $EXT/arcmenu@arcmenu.com/schemas set org.gnome.shell.extensions.arcmenu"
 
-# Keyed by monitor index (0, 1, 2) since monitor ids are hardware specific
+$DTP primary-monitor "''"
+$DTP multi-monitors false
+
+# Keyed by monitor index (0, 1, 2) since monitor IDs are hardware-specific
 L='[{"element":"showAppsButton","visible":false,"position":"stackedTL"},{"element":"activitiesButton","visible":false,"position":"stackedTL"},{"element":"leftBox","visible":true,"position":"stackedTL"},{"element":"taskbar","visible":true,"position":"stackedTL"},{"element":"centerBox","visible":true,"position":"stackedBR"},{"element":"rightBox","visible":true,"position":"stackedBR"},{"element":"systemMenu","visible":true,"position":"stackedBR"},{"element":"dateMenu","visible":true,"position":"stackedBR"},{"element":"desktopButton","visible":true,"position":"stackedBR"}]'
 $DTP panel-element-positions "{\"0\":$L,\"1\":$L,\"2\":$L}"
 
@@ -456,6 +912,15 @@ gsettings set org.gnome.desktop.sound allow-volume-above-100-percent false
 ## File Manager
 
 ### Nautilus
+
+Allow users to create an empty `New Text Document.txt` in the file manager through the following:
+
+```bash
+mkdir -p ~/Templates
+touch ~/Templates/'New Text Document.txt'
+```
+
+Reference: [`New Text Document.txt`](../overlays/File%20Manager/filesystem/live_installed/etc/skel/Templates/New%20Text%20Document.txt)
 
 Install [nautilus-admin](https://github.com/brunonova/nautilus-admin) to maintain the "Open as Root" feature in Nautilus. If you are using an alternative default text editor and do not wish to include `gedit`, you may run the following command:
 
@@ -736,6 +1201,15 @@ The *Flatpaks* overlay provides Flatpak support and `flatpak-chroot`, to assist 
 ```sh
 flatpak-chroot install "{{ overlay.config.flatpakAppId }}"
 ```
+
+After installing or changing an NVIDIA driver on the running system, refresh Flatpak's graphics extensions:
+
+```sh
+flatpak --gl-drivers
+sudo flatpak update --system
+```
+
+The NVIDIA extension must match the loaded host driver. For example, the tested driver reports `nvidia-550-163-01` and needs `org.freedesktop.Platform.GL.nvidia-550-163-01//1.4`. If that extension is missing, install it explicitly with `sudo flatpak install --system flathub org.freedesktop.Platform.GL.nvidia-550-163-01//1.4`, using the version reported by `flatpak --gl-drivers`. Use `flatpak update --user` for a user installation. The host's Debian driver packages do not provide the graphics libraries inside Flatpak sandboxes. See [Flatpak's graphics extension documentation](https://docs.flatpak.org/en/latest/extension.html).
 
 Reference: [`flatpak.yaml`](../overlays/Flatpaks/packages/flatpak.yaml), [`flatpak-chroot`](../overlays/Flatpaks/lb/includes.chroot/usr/local/sbin/flatpak-chroot), [`0010-enable-flatpak-chroot.hook.chroot`](../overlays/Flatpaks/lb/hooks/normal/0010-enable-flatpak-chroot.hook.chroot), [`2500-install-parsec-flatpak.hook.chroot.overlay.tmpl`](../overlays/Remote%20Desktop+Parsec/lb/hooks/normal/2500-install-parsec-flatpak.hook.chroot.overlay.tmpl)
 
