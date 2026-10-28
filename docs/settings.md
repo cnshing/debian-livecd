@@ -877,12 +877,12 @@ The `gnome-shell-extensions-prefs` configuration is as follows:
 gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'
 gsettings set org.gnome.desktop.sound theme-name 'freedesktop'
 gsettings set org.gnome.desktop.background picture-options 'zoom'
-gsettings set org.gnome.desktop.interface font-name 'Inter 10'
-gsettings set org.gnome.desktop.interface document-font-name 'Sans 10'
-gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrains Mono 10'
-gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Inter Bold 10'
-gsettings set org.gnome.desktop.interface font-antialiasing 'rgba'
-gsettings set org.gnome.desktop.interface font-hinting 'medium'
+gsettings set org.gnome.desktop.interface font-name 'Cantarell 11'
+gsettings set org.gnome.desktop.interface document-font-name 'Cantarell 11'
+gsettings set org.gnome.desktop.interface monospace-font-name 'Monospace 11'
+gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Adwaita Sans Bold 11'
+gsettings set org.gnome.desktop.interface font-antialiasing 'grayscale'
+gsettings set org.gnome.desktop.interface font-hinting 'slight'
 gsettings set org.gnome.desktop.interface text-scaling-factor 1.0
 gsettings set org.gnome.desktop.input-sources show-all-sources false
 gsettings set org.gnome.desktop.interface gtk-key-theme 'Default'
@@ -900,13 +900,15 @@ gsettings set org.gnome.desktop.wm.preferences action-double-click-titlebar 'tog
 gsettings set org.gnome.desktop.wm.preferences action-middle-click-titlebar 'none'
 gsettings set org.gnome.desktop.wm.preferences action-right-click-titlebar 'menu'
 gsettings set org.gnome.mutter attach-modal-dialogs true
-gsettings set org.gnome.mutter center-new-windows false
+gsettings set org.gnome.mutter center-new-windows true
 gsettings set org.gnome.desktop.wm.preferences resize-with-right-button false
 gsettings set org.gnome.desktop.wm.preferences mouse-button-modifier '<Super>'
 gsettings set org.gnome.desktop.wm.preferences focus-mode 'click'
 gsettings set org.gnome.desktop.wm.preferences auto-raise false
 gsettings set org.gnome.desktop.sound allow-volume-above-100-percent false
 ```
+
+Reference: [`04-tweaks`](../overlays/Desktop%20Environment+Tweaks/filesystem/live_installed/etc/dconf/db/desktop.d/04-tweaks)
 
 Install these fonts for broader Unicode support including emojis:
 ```bash
