@@ -1214,16 +1214,12 @@ The *Flatpaks* overlay provides Flatpak support and `flatpak-chroot`, to assist 
 flatpak-chroot install "{{ overlay.config.flatpakAppId }}"
 ```
 
-After installing or changing an NVIDIA driver on the running system, refresh Flatpak's graphics extensions:
+Although this isn't included in the LiveCD due to exhaustive device-to-device variations, you can attempt to enable GPU rendering support for your flatpak installtions through the following:
 
 ```sh
 flatpak --gl-drivers
 sudo flatpak update --system
 ```
-
-The NVIDIA extension must match the loaded host driver. For example, the tested driver reports `nvidia-550-163-01` and needs `org.freedesktop.Platform.GL.nvidia-550-163-01//1.4`. If that extension is missing, install it explicitly with `sudo flatpak install --system flathub org.freedesktop.Platform.GL.nvidia-550-163-01//1.4`, using the version reported by `flatpak --gl-drivers`. Use `flatpak update --user` for a user installation. The host's Debian driver packages do not provide the graphics libraries inside Flatpak sandboxes. See [Flatpak's graphics extension documentation](https://docs.flatpak.org/en/latest/extension.html).
-
-Reference: [`flatpak.yaml`](../overlays/Flatpaks/packages/flatpak.yaml), [`flatpak-chroot`](../overlays/Flatpaks/lb/includes.chroot/usr/local/sbin/flatpak-chroot), [`0010-enable-flatpak-chroot.hook.chroot`](../overlays/Flatpaks/lb/hooks/normal/0010-enable-flatpak-chroot.hook.chroot), [`2500-install-parsec-flatpak.hook.chroot.overlay.tmpl`](../overlays/Remote%20Desktop+Parsec/lb/hooks/normal/2500-install-parsec-flatpak.hook.chroot.overlay.tmpl)
 
 ## AppImages
 
