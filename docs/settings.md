@@ -908,6 +908,18 @@ gsettings set org.gnome.desktop.wm.preferences auto-raise false
 gsettings set org.gnome.desktop.sound allow-volume-above-100-percent false
 ```
 
+Install these fonts for broader Unicode support including emojis:
+```bash
+sudo apt update
+sudo apt install --install-recommends \
+  fonts-noto \
+  fonts-noto-color-emoji \
+  fonts-dejavu \
+  fonts-unifont
+fc-cache -f
+```
+
+Reference: [`fonts.yaml`](../overlays/Desktop%20Environment+Tweaks/packages/fonts.yaml)
 
 ## File Manager
 
