@@ -910,7 +910,7 @@ gsettings set org.gnome.desktop.sound allow-volume-above-100-percent false
 
 Reference: [`04-tweaks`](../overlays/Desktop%20Environment+Tweaks/filesystem/live_installed/etc/dconf/db/desktop.d/04-tweaks)
 
-Install these fonts for broader Unicode support including emojis:
+Install these fonts for broader Unicode support, including emojis:
 ```bash
 sudo apt update
 sudo apt install --install-recommends \
@@ -1216,7 +1216,7 @@ The *Flatpaks* overlay provides Flatpak support and `flatpak-chroot`, to assist 
 flatpak-chroot install "{{ overlay.config.flatpakAppId }}"
 ```
 
-Although this isn't included in the LiveCD due to exhaustive device-to-device variations, you can attempt to enable GPU rendering support for your flatpak installtions through the following:
+Although this isn't included in the LiveCD due to extensive device-to-device variations, you can attempt to enable GPU rendering support for your Flatpak installations with the following commands:
 
 ```sh
 flatpak --gl-drivers
