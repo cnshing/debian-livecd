@@ -877,12 +877,12 @@ The `gnome-shell-extensions-prefs` configuration is as follows:
 gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'
 gsettings set org.gnome.desktop.sound theme-name 'freedesktop'
 gsettings set org.gnome.desktop.background picture-options 'zoom'
-gsettings set org.gnome.desktop.interface font-name 'Inter 10'
-gsettings set org.gnome.desktop.interface document-font-name 'Sans 10'
-gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrains Mono 10'
-gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Inter Bold 10'
-gsettings set org.gnome.desktop.interface font-antialiasing 'rgba'
-gsettings set org.gnome.desktop.interface font-hinting 'medium'
+gsettings set org.gnome.desktop.interface font-name 'Cantarell 11'
+gsettings set org.gnome.desktop.interface document-font-name 'Cantarell 11'
+gsettings set org.gnome.desktop.interface monospace-font-name 'Monospace 11'
+gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Adwaita Sans Bold 11'
+gsettings set org.gnome.desktop.interface font-antialiasing 'grayscale'
+gsettings set org.gnome.desktop.interface font-hinting 'slight'
 gsettings set org.gnome.desktop.interface text-scaling-factor 1.0
 gsettings set org.gnome.desktop.input-sources show-all-sources false
 gsettings set org.gnome.desktop.interface gtk-key-theme 'Default'
@@ -900,7 +900,7 @@ gsettings set org.gnome.desktop.wm.preferences action-double-click-titlebar 'tog
 gsettings set org.gnome.desktop.wm.preferences action-middle-click-titlebar 'none'
 gsettings set org.gnome.desktop.wm.preferences action-right-click-titlebar 'menu'
 gsettings set org.gnome.mutter attach-modal-dialogs true
-gsettings set org.gnome.mutter center-new-windows false
+gsettings set org.gnome.mutter center-new-windows true
 gsettings set org.gnome.desktop.wm.preferences resize-with-right-button false
 gsettings set org.gnome.desktop.wm.preferences mouse-button-modifier '<Super>'
 gsettings set org.gnome.desktop.wm.preferences focus-mode 'click'
@@ -908,6 +908,20 @@ gsettings set org.gnome.desktop.wm.preferences auto-raise false
 gsettings set org.gnome.desktop.sound allow-volume-above-100-percent false
 ```
 
+Reference: [`04-tweaks`](../overlays/Desktop%20Environment+Tweaks/filesystem/live_installed/etc/dconf/db/desktop.d/04-tweaks)
+
+Install these fonts for broader Unicode support, including emojis:
+```bash
+sudo apt update
+sudo apt install --install-recommends \
+  fonts-noto \
+  fonts-noto-color-emoji \
+  fonts-dejavu \
+  fonts-unifont
+fc-cache -f
+```
+
+Reference: [`fonts.yaml`](../overlays/Desktop%20Environment+Tweaks/packages/fonts.yaml)
 
 ## File Manager
 
@@ -1202,16 +1216,12 @@ The *Flatpaks* overlay provides Flatpak support and `flatpak-chroot`, to assist 
 flatpak-chroot install "{{ overlay.config.flatpakAppId }}"
 ```
 
-After installing or changing an NVIDIA driver on the running system, refresh Flatpak's graphics extensions:
+Although this isn't included in the LiveCD due to extensive device-to-device variations, you can attempt to enable GPU rendering support for your Flatpak installations with the following commands:
 
 ```sh
 flatpak --gl-drivers
 sudo flatpak update --system
 ```
-
-The NVIDIA extension must match the loaded host driver. For example, the tested driver reports `nvidia-550-163-01` and needs `org.freedesktop.Platform.GL.nvidia-550-163-01//1.4`. If that extension is missing, install it explicitly with `sudo flatpak install --system flathub org.freedesktop.Platform.GL.nvidia-550-163-01//1.4`, using the version reported by `flatpak --gl-drivers`. Use `flatpak update --user` for a user installation. The host's Debian driver packages do not provide the graphics libraries inside Flatpak sandboxes. See [Flatpak's graphics extension documentation](https://docs.flatpak.org/en/latest/extension.html).
-
-Reference: [`flatpak.yaml`](../overlays/Flatpaks/packages/flatpak.yaml), [`flatpak-chroot`](../overlays/Flatpaks/lb/includes.chroot/usr/local/sbin/flatpak-chroot), [`0010-enable-flatpak-chroot.hook.chroot`](../overlays/Flatpaks/lb/hooks/normal/0010-enable-flatpak-chroot.hook.chroot), [`2500-install-parsec-flatpak.hook.chroot.overlay.tmpl`](../overlays/Remote%20Desktop+Parsec/lb/hooks/normal/2500-install-parsec-flatpak.hook.chroot.overlay.tmpl)
 
 ## AppImages
 
