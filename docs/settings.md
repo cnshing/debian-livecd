@@ -944,6 +944,44 @@ sudo apt install --no-install-recommends nautilus-admin
 
 Reference: [`2950-install-nautilus-admin-no-recommends.hook.chroot.overlay.tmpl`](../overlays/File%20Manager/lb/hooks/normal/2950-install-nautilus-admin-no-recommends.hook.chroot.overlay.tmpl)
 
+## Image Viewer
+
+Run the technical workaround to ensure Loupe can open image files in Nautilus's "Open as Administrator" window:
+
+```bash
+sudo mkdir -p /usr/local/libexec /usr/local/share/applications
+sudo tee /usr/local/libexec/loupe-admin <<'EOF'
+#!/bin/sh
+# TODO: Once Loupe fixes GVFS mounts for admin://, revert this workaround.
+# This workaround rewrites an admin:// uri for file:// for images opened in the "Open as Adminstrator" Nautilus window.
+# gvfs mounts admin:// separately for each process (MountPerClient=true in admin.mount), failing with "The specified location is not mounted".
+for uri; do
+    shift
+    case $uri in
+        admin://*) set -- "$@" "file://${uri#admin://}" ;;
+        *) set -- "$@" "$uri" ;;
+    esac
+done
+exec loupe "$@"
+EOF
+sudo chmod +x /usr/local/libexec/loupe-admin
+sudo tee /usr/local/share/applications/loupe-admin.desktop <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Image Viewer
+Icon=org.gnome.Loupe
+TryExec=loupe
+Exec=/usr/local/libexec/loupe-admin %U
+NoDisplay=true
+StartupNotify=true
+MimeType=image/jpeg;image/png;image/gif;image/webp;image/tiff;image/x-tga;image/vnd-ms.dds;image/x-dds;image/bmp;image/vnd.microsoft.icon;image/vnd.radiance;image/x-exr;image/x-portable-bitmap;image/x-portable-graymap;image/x-portable-pixmap;image/x-portable-anymap;image/x-qoi;image/qoi;image/svg+xml;image/svg+xml-compressed;image/avif;image/heic;image/jxl;
+EOF
+{ echo '[Default Applications]'; sed -n 's/^MimeType=//p' /usr/share/applications/org.gnome.Loupe.desktop | tr ';' '\n' | sed '/^$/d; s/$/=loupe-admin.desktop/'; } |
+    sudo tee /usr/local/share/applications/mimeapps.list
+```
+
+Reference: [`loupe-admin`](../overlays/Image%20Viewer/filesystem/live_installed/usr/local/libexec/loupe-admin), [`loupe-admin.desktop`](../overlays/Image%20Viewer/filesystem/live_installed/usr/local/share/applications/loupe-admin.desktop), [`mimeapps.list`](../overlays/Image%20Viewer/filesystem/live_installed/usr/local/share/applications/mimeapps.list)
+
 ## Terminal
 
 Ghostty reads its configuration from `~/.config/ghostty/config.ghostty`. Use the commands below to apply the configuration:

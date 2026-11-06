@@ -1,0 +1,12 @@
+#!/bin/sh
+# TODO: Once Loupe fixes GVFS mounts for admin://, revert this workaround.
+# This workaround rewrites an admin:// uri for file:// for images opened in the "Open as Adminstrator" Nautilus window.
+# gvfs mounts admin:// separately for each process (MountPerClient=true in admin.mount), failing with "The specified location is not mounted".
+for uri; do
+    shift
+    case $uri in
+        admin://*) set -- "$@" "file://${uri#admin://}" ;;
+        *) set -- "$@" "$uri" ;;
+    esac
+done
+exec loupe "$@"

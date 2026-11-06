@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Image Viewer
+Icon=org.gnome.Loupe
+TryExec=loupe
+Exec=/usr/local/libexec/loupe-admin %U
+NoDisplay=true
+StartupNotify=true
+MimeType=image/jpeg;image/png;image/gif;image/webp;image/tiff;image/x-tga;image/vnd-ms.dds;image/x-dds;image/bmp;image/vnd.microsoft.icon;image/vnd.radiance;image/x-exr;image/x-portable-bitmap;image/x-portable-graymap;image/x-portable-pixmap;image/x-portable-anymap;image/x-qoi;image/qoi;image/svg+xml;image/svg+xml-compressed;image/avif;image/heic;image/jxl;

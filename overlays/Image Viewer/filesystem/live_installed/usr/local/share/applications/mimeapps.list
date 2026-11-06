@@ -1,0 +1,24 @@
+[Default Applications]
+image/jpeg=loupe-admin.desktop
+image/png=loupe-admin.desktop
+image/gif=loupe-admin.desktop
+image/webp=loupe-admin.desktop
+image/tiff=loupe-admin.desktop
+image/x-tga=loupe-admin.desktop
+image/vnd-ms.dds=loupe-admin.desktop
+image/x-dds=loupe-admin.desktop
+image/bmp=loupe-admin.desktop
+image/vnd.microsoft.icon=loupe-admin.desktop
+image/vnd.radiance=loupe-admin.desktop
+image/x-exr=loupe-admin.desktop
+image/x-portable-bitmap=loupe-admin.desktop
+image/x-portable-graymap=loupe-admin.desktop
+image/x-portable-pixmap=loupe-admin.desktop
+image/x-portable-anymap=loupe-admin.desktop
+image/x-qoi=loupe-admin.desktop
+image/qoi=loupe-admin.desktop
+image/svg+xml=loupe-admin.desktop
+image/svg+xml-compressed=loupe-admin.desktop
+image/avif=loupe-admin.desktop
+image/heic=loupe-admin.desktop
+image/jxl=loupe-admin.desktop
