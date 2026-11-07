@@ -103,7 +103,7 @@ VPNs should be supported via [GNOME](#desktop-environment) with as many VPN plug
 
 ## Mail Client
 
-Each mail service should be accompanied by corresponding web-app based client. In practice, these web-app implementations are often based off Electron.
+Most mail services should be generally accessible by a mail client with ease of use and convenient integration, which is currently covered by the [Hylki](https://github.com/hyprlab/hylki) mail client.
 
 ## Miscellaneous
 
