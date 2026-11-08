@@ -26,6 +26,7 @@ overlays:
   Display Manager: {}
   File Manager: {}
   Text Editor: {}
+  Mail Client: {}
   Video Player: {}
   Audio Effects: {}
   # Simple battery management rules can lead to thermal/power issues for some users - enable this only if you know what you are doing

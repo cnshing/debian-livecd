@@ -1,0 +1,10 @@
+# Do not add quotes to any value from key `Pin`.
+# Block everything from the Hylki repository by default
+Package: *
+Pin: release o=Hylki
+Pin-Priority: -1
+
+# Allow only Hylki
+Package: hylki
+Pin: release o=Hylki
+Pin-Priority: 100

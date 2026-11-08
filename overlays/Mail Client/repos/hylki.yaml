@@ -1,0 +1,16 @@
+- name: hylki
+  repo: deb https://hylki.hyprlab.co/deb stable main
+  binary: true
+  live: true
+  installed: true
+  key: | # Fingerprint 91A0AC23CFD8C7204417B8998E9F3DC17CFFB221, from https://hylki.hyprlab.co/deb/hylki.sources
+    -----BEGIN PGP PUBLIC KEY BLOCK-----
+
+    mDMEakxT+RYJKwYBBAHaRw8BAQdA8QNZuJFRIcb9tB0b/TGRzB72LZNEjlxaoI6u
+    xGYdLra0K1ZlZW0gRmxhdHBhayBSZXBvc2l0b3J5IDxoeXBybGFiQHByb3Rvbi5t
+    ZT6IkwQTFgoAOxYhBJGgrCPP2McgRBe4mY6fPcF8/7IhBQJqTFP5AhsDBQsJCAcC
+    AiICBhUKCQgLAgQWAgMBAh4HAheAAAoJEI6fPcF8/7IhCQ0BAOpUhnlkuRCfbzHa
+    TabseOU3h0CH5wUGhijz3otdEvkPAP9INQ4jdvvwpngGfg62OPPC51z0efeUw7OI
+    kuVKmDDxAg==
+    =j2Dw
+    -----END PGP PUBLIC KEY BLOCK-----
